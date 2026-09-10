@@ -3,1297 +3,604 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comprar, financiar e construir patrimônio — simulador de decisão</title>
+<title>Entrada, parcela e amortização — simulador Principia Wealth</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#f5f6f8;--panel:#fff;--ink:#0e1726;--ink2:#3a465a;--muted:#6b7789;
   --line:#e4e8ee;--line2:#cfd6df;--navy:#132a4d;--navy2:#1d3a63;
-  --amort:#0f7a5a;--amort-soft:#e7f4ef;--amort-ink:#0a5a42;
-  --invest:#c2751b;--invest-soft:#fbf1e1;--invest-ink:#94540f;
-  --dyn:#5b4bc4;--dyn-soft:#eeecfa;--dyn-ink:#41339c;
-  --imovel:#5a6bb0;--danger:#b4302a;--neutral:#6b7789;
-  --shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px -12px rgba(16,24,40,.14);
+  --in:#0f7a5a;--in-soft:#e7f4ef;--in-ink:#0a5a42;
+  --out:#c2751b;--out-soft:#fbf1e1;--out-ink:#94540f;
+  --tie:#5b4bc4;--tie-soft:#eeecfa;--tie-ink:#41339c;
+  --danger:#b4302a;--danger-soft:#fff6f5;
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px -14px rgba(16,24,40,.16);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;font-feature-settings:"tnum" 1;line-height:1.5}
-.wrap{max-width:1240px;margin:0 auto;padding:26px 20px 60px}
-.eyebrow{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:9px}
-.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--navy)}
-h1{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:clamp(26px,4.2vw,38px);line-height:1.08;margin:0 0 8px}
-h1 em{font-style:italic;color:var(--navy2)}
-.sub{color:var(--ink2);font-size:14.5px;max-width:78ch}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;font-variant-numeric:tabular-nums;line-height:1.5}
+.wrap{max-width:1120px;margin:0 auto;padding:30px 20px 56px}
+
+header.top{margin-bottom:8px}
+.brand{font-size:13px;font-weight:600;color:var(--navy);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.brand::before{content:"";width:18px;height:2px;background:var(--navy)}
+h1{font-family:'Newsreader',Georgia,serif;font-weight:500;font-size:clamp(28px,4.4vw,40px);line-height:1.08;margin:0 0 10px;letter-spacing:-.01em}
+.sub{color:var(--ink2);font-size:15px;max-width:74ch;margin:0}
 .sub b{color:var(--ink);font-weight:600}
-.sub+.sub{margin-top:8px}
 
-.blocklabel{display:flex;align-items:center;gap:12px;margin:28px 0 12px}
-.blocklabel .n{width:26px;height:26px;border-radius:7px;background:var(--navy);color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.blocklabel h2{margin:0;font-family:'Newsreader',serif;font-size:22px;font-weight:500}
-.blocklabel .tagline{font-size:12px;color:var(--muted);margin-left:auto;text-align:right;max-width:46ch;line-height:1.4}
+.block{margin-top:34px}
+.bhead{display:flex;gap:13px;align-items:flex-start;margin-bottom:14px}
+.bhead .n{width:28px;height:28px;border-radius:8px;background:var(--navy);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin-top:2px}
+.bhead h2{font-family:'Newsreader',serif;font-weight:500;font-size:24px;line-height:1.2;margin:0}
+.bhead p{margin:3px 0 0;font-size:13.5px;color:var(--muted);max-width:72ch}
 
-/* ===== bloco do gatilho ===== */
-.decision{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
-.dec-top{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--line)}
-.bignum{padding:16px 18px;border-right:1px solid var(--line);background:#fcfdfe}
-.bignum:last-child{border-right:none}
-.bignum .lead{font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:5px;line-height:1.3}
-.bignum .val{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;margin-bottom:6px}
-.bignum .exp{font-size:11.5px;color:var(--muted);line-height:1.42}
-.bignum.b1 .val{color:var(--navy)}.bignum.b2 .val{color:var(--amort-ink)}.bignum.b3 .val{color:var(--invest-ink)}
-.dec-mid{padding:16px 18px}
-.verdict-box{border-radius:12px;padding:15px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid transparent}
-.verdict-box.inv{background:var(--invest-soft);border-color:#eddcbc}
-.verdict-box.amo{background:var(--amort-soft);border-color:#c7e3d9}
-.verdict-box.dyn{background:var(--dyn-soft);border-color:#d4cef2}
-.verdict-box .vtag{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:5px 10px;border-radius:6px;color:#fff;white-space:nowrap}
-.verdict-box.inv .vtag{background:var(--invest)}.verdict-box.amo .vtag{background:var(--amort)}.verdict-box.dyn .vtag{background:var(--dyn)}
-.verdict-box .vtxt{font-family:'Newsreader',serif;font-size:clamp(15px,2vw,19px);line-height:1.38;flex:1;min-width:250px}
-.verdict-box.inv .vtxt{color:var(--invest-ink)}.verdict-box.amo .vtxt{color:var(--amort-ink)}.verdict-box.dyn .vtxt{color:var(--dyn-ink)}
-.verdict-box .vtxt b{font-weight:600}
-
-.scale{margin-top:18px}
-.scale-track{position:relative;height:15px;border-radius:9px;border:1px solid var(--line2)}
-.thresh{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--navy);border-radius:2px;transform:translateX(-50%)}
-.thresh::after{content:"gatilho";position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--navy);white-space:nowrap}
-.needle{position:absolute;top:-11px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:11px solid var(--ink);transform:translateX(-50%)}
-.needle::after{content:attr(data-lbl);position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:10.5px;font-weight:700;color:var(--ink);white-space:nowrap}
-.needle.ghost{border-top-color:#9aa5b4;opacity:.9}
-.needle.ghost::after{color:#6b7789;font-weight:600}
-.scale-ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:26px}
-.scale-legend{display:flex;gap:18px;margin-top:10px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2)}
-.scale-legend span{display:inline-flex;align-items:center;gap:6px}
-.scale-legend i{width:20px;height:4px;border-radius:2px;display:inline-block}
-.gat-explain{margin:14px 18px 18px;background:#f7f9fb;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-size:12px;color:var(--ink2);line-height:1.55}
-.gat-explain b{color:var(--ink)}
-.gat-explain ul{margin:8px 0 0;padding-left:17px}
-.gat-explain li{margin:4px 0}
-
-/* ===== as três respostas ===== */
-.answers{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
-.ans{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 17px 17px;box-shadow:var(--shadow);border-top:3px solid var(--navy);display:flex;flex-direction:column}
-.ans .q{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;display:flex;gap:7px;align-items:center}
-.ans .q i{width:17px;height:17px;border-radius:5px;background:var(--navy);color:#fff;font-style:normal;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
-.ans .a{font-family:'Newsreader',serif;font-size:24px;line-height:1.12;font-weight:500;margin-bottom:8px;color:var(--navy)}
-.ans .num{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;margin-bottom:8px}
-.ans .why{font-size:12px;color:var(--ink2);line-height:1.5;margin-top:auto}
-.ans .why b{color:var(--ink);font-weight:600}
-.ans.tone-buy{border-top-color:var(--amort)}.ans.tone-buy .a{color:var(--amort-ink)}.ans.tone-buy .num{color:var(--amort-ink)}
-.ans.tone-rent{border-top-color:var(--invest)}.ans.tone-rent .a{color:var(--invest-ink)}.ans.tone-rent .num{color:var(--invest-ink)}
-.ans.tone-tie{border-top-color:var(--neutral)}.ans.tone-tie .a{color:var(--ink2)}.ans.tone-tie .num{color:var(--ink2)}
-.ans.tone-dyn{border-top-color:var(--dyn)}.ans.tone-dyn .a{color:var(--dyn-ink)}.ans.tone-dyn .num{color:var(--dyn-ink)}
-.ans .flag{margin-top:10px;font-size:11px;line-height:1.45;padding:7px 9px;border-radius:7px;background:#fff6f5;border:1px solid #f0cfcd;color:#8d2a25;font-weight:500;display:none}
-.ans .flag.on{display:block}
-@media (max-width:980px){.answers{grid-template-columns:1fr}}
-
-/* ===== layout premissas + resultados ===== */
-.cols{display:grid;grid-template-columns:330px 1fr;gap:20px;align-items:start}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:stretch}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
-.panel-head{padding:15px 18px 12px;border-bottom:1px solid var(--line)}
-.panel-head h3{margin:0;font-size:13px;font-weight:700}
-.panel-head p{margin:3px 0 0;font-size:11.5px;color:var(--muted)}
-.controls{padding:16px 18px 20px;display:flex;flex-direction:column;gap:14px}
-.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:7px;gap:8px}
-.ctrl .hint{font-weight:400;color:var(--muted);font-size:10.5px;text-align:right}
-.slider-row{display:flex;align-items:center;gap:11px}
-input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:5px;border-radius:4px;background:var(--line2);outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:var(--navy);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
-input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--navy);border:2px solid #fff;cursor:pointer}
-.numbox{width:94px;flex:0 0 auto;font-family:inherit;font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;background:#fbfcfd;color:var(--ink)}
-input:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
-.field ro input,input[readonly]{background:#f1f3f7;color:var(--ink);font-weight:600;cursor:default}
-.field-note{font-size:10.5px;margin-top:5px;color:var(--muted);line-height:1.45}
-.field-note.alert{color:var(--danger);font-weight:600}
-.field-note.info{color:var(--invest-ink);font-weight:600}
-.field-note.good{color:var(--amort-ink);font-weight:600}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px}
-.field label .hint{font-weight:400;color:var(--muted);font-size:10.5px}
-.field input{width:100%;font-family:inherit;font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;background:#fbfcfd;color:var(--ink)}
-.field.hero-field input{border-color:var(--navy);background:#f7fafd;font-weight:700;font-size:14.5px}
-.divider-lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:-6px;padding-top:8px;border-top:1px solid var(--line)}
-.adv{border-top:1px solid var(--line);padding-top:10px}
-.adv summary{cursor:pointer;list-style:none;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.adv summary::-webkit-details-marker{display:none}
-.adv summary .chev{transition:transform .2s}
-.adv[open] summary .chev{transform:rotate(90deg)}
-.adv .advbody{display:flex;flex-direction:column;gap:14px;padding-top:14px}
-.reset{font-size:12px;font-weight:600;color:var(--navy);background:none;border:none;cursor:pointer;padding:6px 0;text-align:left}
-.reset:hover{text-decoration:underline}
 
-.results{display:flex;flex-direction:column;gap:16px}
-.pvbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 15px;box-shadow:var(--shadow)}
-.pvbar .txt{font-size:12.5px;color:var(--ink2)}.pvbar .txt b{color:var(--ink)}
-.seg{display:inline-flex;background:#eef1f5;border-radius:8px;padding:3px;gap:2px;flex-wrap:wrap}
-.seg button{background:none;border:none;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--muted);padding:5px 11px;border-radius:6px;cursor:pointer}
-.seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(16,24,40,.08)}
+/* formulários */
+.form{padding:18px 20px 20px;display:flex;flex-direction:column;gap:16px}
+.group-t{font-size:13px;font-weight:700;color:var(--navy);margin:0 0 -6px;padding-top:14px;border-top:1px solid var(--line)}
+.group-t:first-child{padding-top:0;border-top:none}
+.row{display:grid;gap:11px}
+.row.c2{grid-template-columns:1fr 1fr}
+.row.c3{grid-template-columns:1fr 1fr 1fr}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:6px}
+.field input{width:100%;font:inherit;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;background:#fbfcfd;color:var(--ink);text-align:right}
+.field input[readonly]{background:#eef1f5;border-color:#e2e6ec;color:var(--ink2);cursor:default}
+.field.key input{border-color:var(--navy);background:#f6f9fd;font-size:15px}
+input:focus-visible,summary:focus-visible,button:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
+.note{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+.note b{color:var(--ink2);font-weight:600}
+.note.alert{color:var(--danger);font-weight:600}
 
-.tabs{display:flex;gap:4px;padding:0 4px;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:14px 14px 0 0;overflow-x:auto}
-.tab{background:none;border:none;padding:13px 15px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap}
-.tab.on{color:var(--navy);border-bottom-color:var(--navy)}
-.tabwrap{background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 14px 14px;box-shadow:var(--shadow);padding:16px 18px 18px}
-.tabpane{display:none}.tabpane.on{display:block}
-.pane-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:10px}
-.pane-head h3{margin:0;font-size:13px;font-weight:700}
-.pane-head .csub{font-size:11.5px;color:var(--muted);margin-top:2px;max-width:70ch;line-height:1.45}
-.chart-holder{position:relative;height:340px;margin-top:6px}
-.note-inline{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.55;border-left:2px solid var(--line2);padding-left:10px}
-.note-inline b{color:var(--ink2)}
+/* a conta da entrada */
+.receipt{padding:20px 22px 18px;display:flex;flex-direction:column}
+.receipt h3{font-family:'Newsreader',serif;font-weight:500;font-size:19px;margin:0 0 12px}
+.lines{display:flex;flex-direction:column}
+.ln{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+.ln span:first-child{color:var(--ink2)}
+.ln span:last-child{font-weight:600;white-space:nowrap}
+.ln.minus span:last-child{color:var(--danger)}
+.ln.sum{border-bottom:1px solid var(--line2)}
+.ln.sum span{font-weight:700;color:var(--ink)}
+.ln.total{border-bottom:none;padding:12px 0 4px}
+.ln.total span:first-child{font-weight:700;color:var(--ink);font-size:15px}
+.ln.total span:last-child{font-size:24px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+.ln.pct{border-bottom:1px solid var(--line2);padding:0 0 10px;font-size:12px}
+.ln.pct span{color:var(--muted)!important;font-weight:500!important}
+.ln.off span:last-child{color:var(--muted);text-decoration:line-through;font-weight:500}
+.parc{margin-top:14px;background:var(--navy);color:#fff;border-radius:11px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.parc .k{font-size:13px;color:#c9d6e8;line-height:1.35;flex:1 1 180px;min-width:0}
+.parc .k b{display:block;color:#fff;font-size:14px;font-weight:600}
+.parc .v{flex:0 0 auto;font-size:30px;font-weight:800;letter-spacing:-.015em;white-space:nowrap}
+.parc .v small{font-size:13px;font-weight:500;color:#c9d6e8;margin-left:3px}
+.rule{margin-top:12px;font-size:11.5px;color:var(--muted);line-height:1.5}
+.rule q{font-style:italic;color:var(--ink2)}
+.warn{margin-top:12px;background:var(--danger-soft);border:1px solid #f0cfcd;color:#8d2a25;border-radius:9px;padding:9px 12px;font-size:12.5px;line-height:1.45;font-weight:500}
+.warn:empty{display:none}
 
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:14px}
-@media (max-width:1200px){.cards{grid-template-columns:repeat(2,1fr)}}
-.card{background:#fcfdfe;border:1px solid var(--line);border-radius:12px;padding:14px;position:relative}
-.card.win{box-shadow:0 0 0 1.5px currentColor}
-.card .badge{position:absolute;top:-9px;right:11px;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:5px;display:none;color:#fff;background-color:#132a4d}
-.card.win .badge{display:inline-block}
-.fam-invest .badge{background-color:#c2751b}.fam-amort .badge{background-color:#0f7a5a}
-.fam-amort2 .badge{background-color:#2a7d6a}.fam-dyn .badge{background-color:#5b4bc4}
-.card .letter{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;margin-bottom:8px}
-.card h4{margin:0 0 2px;font-size:12.5px;font-weight:700}
-.card .desc{font-size:10.5px;color:var(--muted);margin:0 0 11px;min-height:44px;line-height:1.38}
-.card .pl-k{font-size:10px;color:var(--muted)}
-.card .pl-v{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.015em;margin:1px 0 10px;line-height:1}
-.card .rows{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line);padding-top:9px}
-.card .r{display:flex;justify-content:space-between;font-size:11px;gap:8px}
-.card .r span:first-child{color:var(--muted)}
-.card .r span:last-child{font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
-.card .r.sep{border-top:1px dashed var(--line);padding-top:6px}
-.fam-invest{color:var(--invest)}.fam-invest .letter{background:var(--invest)}
-.fam-amort{color:var(--amort)}.fam-amort .letter{background:var(--amort)}
-.fam-amort2{color:#2a7d6a}.fam-amort2 .letter{background:#2a7d6a}
-.fam-dyn{color:#5b4bc4}.fam-dyn .letter{background:#5b4bc4}
+/* sensibilidade */
+.sens{padding:6px 6px 4px;overflow-x:auto}
+table.st{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+table.st th{text-align:right;font-size:12px;font-weight:600;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--line2)}
+table.st th:first-child,table.st td:first-child{text-align:left}
+table.st td{text-align:right;padding:9px 14px;border-bottom:1px solid #eef1f5;white-space:nowrap}
+table.st td:first-child{font-weight:600;color:var(--ink2)}
+table.st tr.cur td{background:#eef3fa}
+table.st tr.cur td:first-child{color:var(--navy)}
+table.st .tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:600;color:var(--navy);background:#dfe8f5;border-radius:5px;padding:1px 7px;vertical-align:1px}
+table.st td.pc{width:34%}
+.bar{display:flex;align-items:center;gap:12px}
+.bar .trk{flex:1;display:flex;justify-content:flex-end;min-width:60px}
+.bar i{display:block;height:8px;border-radius:4px;background:var(--navy2);opacity:.8}
+tr.cur .bar i{background:var(--navy);opacity:1}
+.bar b{font-weight:700;min-width:78px;text-align:right}
+.bar em{font-style:normal;color:var(--danger);font-weight:600;font-size:12px}
+.sens-note{font-size:12px;color:var(--muted);margin:10px 4px 0;line-height:1.5;max-width:90ch}
 
-.rangetbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px;font-variant-numeric:tabular-nums}
-.rangetbl th{text-align:right;font-size:10.5px;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line)}
-.rangetbl th:first-child{text-align:left}
-.rangetbl td{text-align:right;padding:6px 8px;border-bottom:1px solid #eef1f5}
-.rangetbl td:first-child{text-align:left;font-weight:600;color:var(--ink2)}
-.rangetbl tr.hl td{background:#eef4f1;font-weight:700}
-.rangetbl tr.cur td{background:#f7f9fb}
-.rangetbl td.win{color:var(--amort-ink);font-weight:700}
-.rangetbl td.lose{color:var(--danger)}
-.tblwrap{max-height:470px;overflow:auto;border:1px solid var(--line);border-radius:10px}
-table.data{border-collapse:collapse;width:100%;font-size:11.5px;font-variant-numeric:tabular-nums}
-table.data thead th{position:sticky;top:0;background:#f2f4f7;color:var(--ink2);font-weight:700;font-size:10.5px;text-align:right;padding:9px 10px;border-bottom:1px solid var(--line2);white-space:nowrap;z-index:2}
-table.data thead th:first-child{text-align:left}
-table.data tbody td{padding:6px 10px;text-align:right;border-bottom:1px solid #f0f2f5;white-space:nowrap}
-table.data tbody td:first-child{text-align:left;font-weight:600;color:var(--ink2)}
-table.data tbody tr.evt{background:#f0f7f4}
-table.data tbody tr.quit td{border-bottom:2px solid var(--amort)}
-td.pos{color:var(--amort-ink);font-weight:600}td.deb{color:var(--danger)}
-.tbl-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:9px}
-.tbl-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+/* gatilho */
+.gat{padding:18px 20px 18px;display:flex;flex-direction:column;gap:14px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:stretch}
+.vs .side{border-radius:11px;padding:12px 14px;border:1px solid var(--line)}
+.vs .side.in{background:var(--in-soft);border-color:#c7e3d9}
+.vs .side.out{background:var(--out-soft);border-color:#eddcbc}
+.vs .k{font-size:12.5px;font-weight:600;color:var(--ink2);line-height:1.3}
+.vs .v{font-size:28px;font-weight:800;letter-spacing:-.015em;line-height:1.1;margin:4px 0 3px}
+.vs .in .v{color:var(--in-ink)}.vs .out .v{color:var(--out-ink)}
+.vs .e{font-size:11.5px;color:var(--muted);line-height:1.4}
+.vs .x{align-self:center;font-family:'Newsreader',serif;font-size:18px;color:var(--muted)}
+.verdict{border-radius:11px;padding:12px 14px;font-family:'Newsreader',serif;font-size:18px;line-height:1.35;border:1px solid transparent}
+.verdict.in{background:var(--in-soft);border-color:#c7e3d9;color:var(--in-ink)}
+.verdict.out{background:var(--out-soft);border-color:#eddcbc;color:var(--out-ink)}
+.verdict.tie{background:var(--tie-soft);border-color:#d4cef2;color:var(--tie-ink)}
+.verdict small{display:block;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink2);margin-top:5px;line-height:1.45}
+.scale{padding:22px 4px 0}
+.track{position:relative;height:12px;border-radius:7px}
+.mark{position:absolute;top:-7px;bottom:-7px;width:2px;background:var(--navy);transform:translateX(-50%)}
+.mark span{position:absolute;bottom:calc(100% + 3px);left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;color:var(--navy);white-space:nowrap}
+.needle{position:absolute;top:-2px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:10px solid var(--ink);transform:translate(-50%,12px)}
+.needle span{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;color:var(--ink);white-space:nowrap}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:30px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:4px;border-radius:2px;display:inline-block}
 
-.insights{background:var(--navy);color:#eaf0f8;border-radius:14px;padding:20px 22px 22px;box-shadow:var(--shadow)}
-.insights .rk{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#93b0d6;margin-bottom:4px}
-.insights .rh{font-family:'Newsreader',serif;font-size:20px;color:#fff;margin-bottom:16px;font-weight:400;line-height:1.3}
-.ins-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.13);border-radius:11px;overflow:hidden}
-.ins{background:var(--navy);padding:15px 16px 16px}
-.ins .k{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8fb0d8;margin-bottom:7px}
-.ins .v{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:#fff;font-variant-numeric:tabular-nums;margin-bottom:6px}
-.ins .v.sm{font-size:16px;font-family:'Newsreader',serif;font-weight:500;letter-spacing:0}
-.ins .t{font-size:12.5px;line-height:1.5;color:#c1d2e6}
-.ins .t b{color:#fff;font-weight:600}
-.ins .v.amo{color:#7fe0be}.ins .v.inv{color:#f0b366}.ins .v.neu{color:#cfd9e6}.ins .v.bad{color:#f2a6a1}
-@media (max-width:900px){.ins-grid{grid-template-columns:1fr}}
+/* respostas */
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.ans{padding:16px 18px 18px;border-top:3px solid var(--navy)}
+.ans .q{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.ans .a{font-family:'Newsreader',serif;font-size:27px;font-weight:500;line-height:1.12;margin-bottom:6px}
+.ans .num{font-size:14px;font-weight:700;margin-bottom:8px}
+.ans .why{font-size:13px;color:var(--ink2);line-height:1.55}
+.ans .why b{color:var(--ink);font-weight:600}
+.ans.in{border-top-color:var(--in)}.ans.in .a,.ans.in .num{color:var(--in-ink)}
+.ans.out{border-top-color:var(--out)}.ans.out .a,.ans.out .num{color:var(--out-ink)}
+.ans.tie{border-top-color:var(--tie)}.ans.tie .a,.ans.tie .num{color:var(--tie-ink)}
+.ans.na{border-top-color:var(--line2)}.ans.na .a{color:var(--ink2)}
+.foot-ans{font-size:12px;color:var(--muted);margin:10px 2px 0}
 
-.robust{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;box-shadow:var(--shadow)}
-.robust .rt{font-size:13px;font-weight:700;margin-bottom:3px}
-.robust .rs{font-size:11.5px;color:var(--muted);margin-bottom:10px}
-.robust table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
-.robust th{text-align:right;font-size:10.5px;color:var(--muted);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--line)}
-.robust th:first-child{text-align:left}
-.robust td{text-align:right;padding:6px 8px;border-bottom:1px solid #eef1f5}
-.robust td:first-child{text-align:left;font-weight:600;color:var(--ink2)}
-.robust tr.base td{background:#eef4f1}
-.robust .conc{font-size:11.5px;color:var(--ink2);margin-top:10px;line-height:1.55}
-.robust .conc b{color:var(--ink)}
+/* FGTS */
+.fgts{padding:20px 22px 20px}
+.fgts .intro{font-size:14px;color:var(--ink2);margin:0 0 14px;max-width:80ch}
+.fgts .intro b{color:var(--ink)}
+.conds{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.conds li{border-left:3px solid var(--out);padding:2px 0 2px 13px}
+.conds h4{margin:0 0 4px;font-size:14px;font-weight:700;color:var(--ink)}
+.conds p{margin:0 0 8px;font-size:13px;color:var(--ink2);line-height:1.5}
+.conds blockquote{margin:0 0 6px;font-size:11.5px;color:var(--muted);line-height:1.5;font-style:italic}
+.src{font-size:11.5px;color:var(--muted);margin:14px 0 0;border-top:1px solid var(--line);padding-top:10px}
 
-.warn-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 0}
-.warn{background:#fffaf1;border:1px solid #f0dcb8;border-left:3px solid var(--invest);border-radius:9px;padding:11px 14px;font-size:12px;color:#6d5a35;line-height:1.45}
-.warn b{color:var(--invest-ink);font-weight:600;display:block;margin-bottom:2px;font-size:11px;text-transform:uppercase}
-.method{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.method summary{cursor:pointer;list-style:none;padding:15px 20px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
-.method summary::-webkit-details-marker{display:none}
-.method summary .chev{transition:transform .2s;color:var(--muted)}
-.method[open] summary .chev{transform:rotate(90deg)}
-.method .mbody{padding:2px 20px 20px;font-size:12.5px;color:var(--ink2);line-height:1.62;border-top:1px solid var(--line)}
-.method h5{font-size:12px;margin:16px 0 4px;color:var(--ink)}
-.method code{background:#eef1f5;border-radius:4px;padding:1px 5px;font-size:11.5px}
-.method ul{margin:6px 0;padding-left:18px}.method li{margin:3px 0}
-footer.foot{margin-top:20px;font-size:11px;color:var(--muted);text-align:center;line-height:1.6}
-@media (max-width:980px){.cols{grid-template-columns:1fr}.warn-row{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.dec-top{grid-template-columns:1fr}.bignum{border-right:none;border-bottom:1px solid var(--line)}.blocklabel .tagline{display:none}}
+details.method{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+details.method summary{cursor:pointer;list-style:none;padding:14px 20px;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+details.method summary::-webkit-details-marker{display:none}
+details.method summary::after{content:"+";font-size:18px;color:var(--muted);font-weight:400}
+details.method[open] summary::after{content:"−"}
+.mbody{padding:0 20px 18px;font-size:13px;color:var(--ink2);line-height:1.6;border-top:1px solid var(--line)}
+.mbody ul{margin:12px 0 0;padding-left:18px}
+.mbody li{margin:5px 0}
+.mbody code{background:#eef1f5;border-radius:4px;padding:1px 5px;font-size:12px}
+footer.f{margin-top:18px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
+
+@media (max-width:900px){
+  .split,.answers{grid-template-columns:1fr}
+  .conds{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .row.c3{grid-template-columns:1fr 1fr}
+  .vs{grid-template-columns:1fr}
+  .vs .x{display:none}
+  .parc .v{font-size:26px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="eyebrow"><span class="dot"></span>Principia Wealth · Ferramenta de apoio à decisão</div>
-    <h1>Comprar, financiar e <em>construir patrimônio</em></h1>
-    <p class="sub">Três decisões estão em aberto: <b>comprar ou continuar alugando</b>, <b>quanto dar de entrada</b> e, depois de comprado, <b>amortizar ou investir</b>. As três são a mesma pergunta: <b>o dinheiro rende mais dentro ou fora do imóvel?</b></p>
-    <p class="sub">Compare o <b>custo do financiamento</b> (CET + TR, travado por décadas) com o <b>rendimento líquido dos seus investimentos</b> (Selic menos 15% de IR). O ponto de empate é o <b>gatilho</b>. Você não precisa prever a Selic: basta ter uma visão sobre a <b>média</b> do período.</p>
-  </header>
+<header class="top">
+  <p class="brand">Principia Wealth</p>
+  <h1>Quanto dar de entrada e o que fazer depois de comprar</h1>
+  <p class="sub">Primeiro, quanto do seu dinheiro vira entrada e quanto fica a parcela. Depois, duas decisões que dependem da mesma comparação: <b>o custo do financiamento contra o rendimento líquido dos seus investimentos</b>.</p>
+</header>
 
-  <div class="blocklabel">
-    <span class="n">1</span>
-    <h2>O gatilho: a taxa que decide tudo</h2>
-    <span class="tagline">Uma única taxa responde às três perguntas: comprar, quanto de entrada e o que fazer depois.</span>
-  </div>
+<section class="block">
+  <div class="bhead"><span class="n">1</span><div><h2>A entrada e a parcela</h2>
+    <p>ITBI, escritura e registro saem do seu bolso no dia da compra. Por isso a entrada efetiva é menor que o dinheiro disponível.</p></div></div>
+  <div class="split">
+    <div class="panel form">
+      <p class="group-t">O imóvel</p>
+      <div class="field key"><label for="P">Valor do imóvel (R$)</label><input id="P" inputmode="decimal" value="1.200.000">
+        <div class="note" id="pNote">Para usar o FGTS, o imóvel deve ser avaliado em até R$ 2.250.000.</div></div>
+      <div class="row c2">
+        <div class="field"><label for="pctAq">Custos de aquisição (%)</label><input id="pctAq" inputmode="decimal" value="4,00"></div>
+        <div class="field"><label for="custoR">Custos de aquisição (R$)</label><input id="custoR" readonly tabindex="-1"></div>
+      </div>
+      <div class="note" style="margin-top:-8px">ITBI (3% em São Paulo) mais escritura e registro.</div>
 
-  <section class="decision">
-    <div class="dec-top">
-      <div class="bignum b1">
-        <div class="lead">Seu financiamento custa, por ano</div>
-        <div class="val" id="bnCusto">—</div>
-        <div class="exp" id="bnCustoExp">—</div>
+      <p class="group-t">O dinheiro para a entrada</p>
+      <div class="row c2">
+        <div class="field"><label for="fgts">FGTS (R$)</label><input id="fgts" inputmode="decimal" value="224.000"></div>
+        <div class="field"><label for="proprios">Recursos próprios (R$)</label><input id="proprios" inputmode="decimal" value="384.000"></div>
       </div>
-      <div class="bignum b2">
-        <div class="lead">Investir só compensa se a Selic passar de</div>
-        <div class="val" id="bnGatilho">—</div>
-        <div class="exp" id="bnGatilhoExp">—</div>
+      <div class="note" style="margin-top:-8px">Recursos próprios: a doação, já descontado o ITCMD, e o que mais for para a compra.</div>
+
+      <p class="group-t">O financiamento</p>
+      <div class="row c3">
+        <div class="field"><label for="cet">CET (% a.a.)</label><input id="cet" inputmode="decimal" value="12,20"></div>
+        <div class="field"><label for="tr">TR (% a.a.)</label><input id="tr" inputmode="decimal" value="0,00"></div>
+        <div class="field"><label for="prazo">Prazo (meses)</label><input id="prazo" inputmode="numeric" value="420"></div>
       </div>
-      <div class="bignum b3">
-        <div class="lead">Selic média esperada enquanto durar a dívida</div>
-        <div class="val" id="bnSelicMedia">—</div>
-        <div class="exp" id="bnSelicExp">—</div>
-      </div>
+      <div class="note" style="margin-top:-8px">Padrão: CET da Caixa. O CET já inclui juros, seguros e tarifas; peça o número por escrito ao banco.</div>
     </div>
 
-    <div class="dec-mid">
-      <div class="verdict-box" id="verdictBox">
-        <span class="vtag" id="vtag">—</span><span class="vtxt" id="vtxt">—</span>
+    <div class="panel receipt">
+      <h3>A conta da entrada</h3>
+      <div class="lines" id="lines"></div>
+      <div class="parc">
+        <div class="k"><b>1ª parcela</b><span id="parcSub">—</span></div>
+        <div class="v" id="parcV">—</div>
       </div>
-
-      <div class="scale">
-        <div class="scale-track" id="scaleTrack">
-          <div class="thresh" id="thresh" style="left:50%"></div>
-          <div class="needle ghost" id="needleHoje" data-lbl="" style="left:60%"></div>
-          <div class="needle" id="needle" data-lbl="" style="left:50%"></div>
-        </div>
-        <div class="scale-ends"><span>Selic 0%</span><span id="scaleMid"></span><span>Selic 25%</span></div>
-        <div class="scale-legend">
-          <span><i style="background:var(--amort)"></i>Rende mais dentro do imóvel — entrada maior, amortizar</span>
-          <span><i style="background:var(--invest)"></i>Rende mais fora do imóvel — entrada menor, investir</span>
-          <span><i style="background:#9aa5b4"></i>Selic de hoje (referência)</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="gat-explain">
-      <b>Por que uma taxa só responde às três perguntas.</b> Cada real que entra no imóvel — na entrada ou amortizando depois — apaga um pedaço da dívida e, com isso, "rende" o custo dela: garantido e sem imposto. Cada real que fica fora rende a Selic, menos 15% de imposto. O gatilho é onde os dois empatam.
-      <ul>
-        <li><b>Selic acima do gatilho</b> → rende mais fora: <b>entrada mínima</b>, financie mais e invista a diferença.</li>
-        <li><b>Selic abaixo do gatilho</b> → rende mais dentro: <b>entrada máxima</b> e amortize o quanto puder.</li>
-        <li>Compare com a <b>Selic média até o fim da dívida</b>, não com a de hoje: o custo do financiamento fica travado por décadas, a Selic não.</li>
-      </ul>
-    </div>
-  </section>
-
-  <div class="blocklabel">
-    <span class="n">2</span>
-    <h2>As três respostas</h2>
-    <span class="tagline">Resultado da simulação completa, em valores de hoje.</span>
-  </div>
-
-  <div class="answers">
-    <div class="ans" id="ans1">
-      <div class="q"><i>1</i>Comprar ou continuar alugando?</div>
-      <div class="a" id="a1">—</div>
-      <div class="num" id="n1">—</div>
-      <div class="why" id="w1">—</div>
-      <div class="flag" id="f1"></div>
-    </div>
-    <div class="ans" id="ans2">
-      <div class="q"><i>2</i>Quanto dar de entrada?</div>
-      <div class="a" id="a2">—</div>
-      <div class="num" id="n2">—</div>
-      <div class="why" id="w2">—</div>
-      <div class="flag" id="f2"></div>
-    </div>
-    <div class="ans" id="ans3">
-      <div class="q"><i>3</i>Depois de comprar: adiantar o financiamento ou investir?</div>
-      <div class="a" id="a3">—</div>
-      <div class="num" id="n3">—</div>
-      <div class="why" id="w3">—</div>
-      <div class="flag" id="f3"></div>
+      <div class="warn" id="warn1"></div>
+      <p class="rule">O FGTS não pode pagar esses custos: <q>É vedado o uso do FGTS para pagamento de taxas, impostos e demais despesas na aquisição [...]</q> (Manual FGTS – Utilização na Moradia Própria, CAIXA).</p>
     </div>
   </div>
+</section>
 
-  <div class="blocklabel">
-    <span class="n">3</span>
-    <h2>Os números por trás das respostas</h2>
-    <span class="tagline">Em todos os cenários você gasta o mesmo por mês com moradia. O que muda é só para onde vai o dinheiro que sobra.</span>
-  </div>
-
-  <div class="cols">
-    <aside class="panel">
-      <div class="panel-head"><h3>Seus dados</h3><p>Preencha na ordem. Tudo recalcula na hora.</p></div>
-      <div class="controls">
-
-        <div class="divider-lbl" style="border-top:none;padding-top:0">1 · O imóvel</div>
-        <div class="field"><label>Valor do imóvel (R$)</label><input type="text" id="imovel" value="1.200.000"></div>
-        <div class="two">
-          <div class="field"><label>Prazo <span class="hint">meses</span></label><input type="text" id="prazo" value="420"></div>
-          <div class="field"><label>Aluguel hoje <span class="hint">R$/mês</span></label><input type="text" id="aluguel" value="5.000"></div>
-        </div>
-        <div class="field-note">420 meses é o prazo máximo usual. Aluguel sem condomínio.</div>
-
-        <div class="divider-lbl">2 · A entrada</div>
-        <div class="field"><label>Patrimônio disponível para a entrada (R$)</label><input type="text" id="w0" value="600.000"></div>
-        <div class="two">
-          <div class="field"><label>Custos de aquisição (%)</label><input type="text" id="pctAq" value="4,00"></div>
-          <div class="field ro"><label>Custos em R$ <span class="hint">calculado</span></label><input type="text" id="custoAqR" value="—" readonly></div>
-        </div>
-        <div class="field ro"><label>Entrada máxima possível (R$) <span class="hint">calculado</span></label><input type="text" id="entMax" value="—" readonly></div>
-        <div class="field-note">ITBI (3% em SP) + escritura e registro saem do seu bolso <b>no mês zero</b>, junto com a entrada. Por isso a entrada máxima é menor que o patrimônio disponível.</div>
-        <div class="field hero-field">
-          <label>Entrada que você vai dar (R$)</label>
-          <input type="text" id="entrada" value="240.000">
-          <div class="field-note" id="entradaNote"></div>
-        </div>
-
-        <div class="divider-lbl">3 · Seu fluxo anual</div>
-        <div class="field">
-          <label>Valor anual para investir ou amortizar (R$)</label>
-          <input type="text" id="extra" value="60.000">
-          <div class="field-note info">O que sobra por ano além da parcela. <b>Inclua o FGTS</b> que pretende usar. É este dinheiro que a pergunta 3 direciona.</div>
-        </div>
-
-        <div class="divider-lbl">4 · O financiamento</div>
-        <div class="two">
-          <div class="field"><label>CET (% a.a.)</label><input type="text" id="cet" value="12,20"></div>
-          <div class="field"><label>TR (% a.a.)</label><input type="text" id="trA" value="0,00"></div>
-        </div>
-        <div class="field-note">Padrão: <b>CET da Caixa</b>, o menor do mercado. O CET é a taxa cheia — juros, seguros e tarifas. A TR corrige o saldo e soma ao CET. Peça o CET por escrito.</div>
-
-        <div class="divider-lbl">5 · Cenário econômico</div>
-        <div class="two">
-          <div class="field"><label>Selic hoje (% a.a.)</label><input type="text" id="selicNum" value="14,00"></div>
-          <div class="field"><label>Selic terminal (% a.a.)</label><input type="text" id="selicTerm" value="10,50"></div>
-        </div>
-        <div class="two">
-          <div class="field"><label>Convergência <span class="hint">anos</span></label><input type="text" id="convAnos" value="3"></div>
-          <div class="field"><label>Inflação (% a.a.)</label><input type="text" id="infl" value="4,50"></div>
-        </div>
-        <div class="field-note" id="selicNote"></div>
-
-        <details class="adv">
-          <summary>Premissas avançadas <span class="chev">›</span></summary>
-          <div class="advbody">
-            <div class="two">
-              <div class="field"><label>Seguro + manutenção (% a.a.)</label><input type="text" id="custoProp" value="0,60"></div>
-              <div class="field"><label>Valorização real (% a.a.)</label><input type="text" id="valoriz" value="0,00"></div>
-            </div>
-            <div class="field-note">Só o que o <b>dono</b> paga e o inquilino não: seguro e manutenção. <b>IPTU e condomínio ficam de fora</b> porque são repassados ao inquilino — incidem nos dois cenários e se anulam na comparação. Valorização é <b>acima da inflação</b>; zero é a premissa conservadora.</div>
-            <div class="two">
-              <div class="field"><label>Financiamento máx. (%)</label><input type="text" id="ltv" value="80"></div>
-              <div class="field"><label>Horizonte (anos)</label><input type="text" id="horiz" value="35"></div>
-            </div>
-            <div class="field"><label>Início da simulação</label><input type="date" id="dataIni"></div>
-          </div>
-        </details>
-
-        <button class="reset" id="resetBtn">↺ Restaurar valores padrão</button>
-      </div>
-    </aside>
-
-    <div class="results">
-      <div class="pvbar">
-        <div class="txt" id="pvTxt">—</div>
-        <div class="seg" id="segPV" style="flex:0 0 auto"><button data-v="r" class="on">Valores de hoje</button><button data-v="n">Valores do futuro</button></div>
-      </div>
-
-      <div>
-        <div class="tabs">
-          <button class="tab on" data-pane="p1">1 · Comprar × alugar</button>
-          <button class="tab" data-pane="p2">2 · Quanto de entrada</button>
-          <button class="tab" data-pane="p3">3 · Adiantar × investir</button>
-          <button class="tab" data-pane="p4">O que você tem × deve</button>
-          <button class="tab" data-pane="p5">Tabela ano a ano</button>
-        </div>
-        <div class="tabwrap">
-
-          <div class="tabpane on" id="p1">
-            <div class="pane-head">
-              <div><h3>Patrimônio comprando × continuando a alugar</h3>
-                <div class="csub">Nos dois caminhos você gasta o mesmo por mês com moradia. Alugando, a diferença entre o aluguel e o custo de ser proprietário é investida; comprando, ela está dentro do imóvel.</div></div>
-            </div>
-            <div class="chart-holder"><canvas id="chartRent"></canvas></div>
-            <table class="rangetbl" id="rentTbl"></table>
-            <div class="note-inline" id="p1note">—</div>
-          </div>
-
-          <div class="tabpane" id="p2">
-            <div class="pane-head">
-              <div><h3>Patrimônio final conforme o tamanho da entrada</h3>
-                <div class="csub">Cada ponto é a mesma compra com uma entrada diferente. O que sobra do seu patrimônio fica investido, e a parcela maior ou menor é compensada mês a mês — o gasto total é idêntico.</div></div>
-            </div>
-            <div class="chart-holder"><canvas id="chartEnt"></canvas></div>
-            <table class="rangetbl" id="entTbl"></table>
-            <div class="note-inline" id="p2note">—</div>
-          </div>
-
-          <div class="tabpane" id="p3">
-            <div class="cards">
-              <div class="card fam-invest" id="cardA">
-                <span class="badge">Vencedor</span><span class="letter">A</span>
-                <h4>Investir</h4>
-                <p class="desc">O valor anual vai todo para os investimentos. O financiamento segue até o fim do prazo, do jeito que foi contratado.</p>
-                <div class="pl-k" id="klA">—</div><div class="pl-v" id="plA">—</div>
-                <div class="rows">
-                  <div class="r"><span>Quitação</span><span id="quitA">—</span></div>
-                  <div class="r"><span>Custo total da dívida</span><span id="costA">—</span></div>
-                  <div class="r"><span>Investimentos</span><span id="fundA">—</span></div>
-                  <div class="r sep"><span>Patrimônio total</span><span id="totA">—</span></div>
-                </div>
-              </div>
-              <div class="card fam-amort" id="cardB">
-                <span class="badge">Vencedor</span><span class="letter">B</span>
-                <h4>Amortizar · quitar antes</h4>
-                <p class="desc">O valor anual abate a dívida. A parcela continua igual, mas o financiamento acaba muito antes — e a partir daí a parcela inteira vira investimento.</p>
-                <div class="pl-k" id="klB">—</div><div class="pl-v" id="plB">—</div>
-                <div class="rows">
-                  <div class="r"><span>Quitação</span><span id="quitB">—</span></div>
-                  <div class="r"><span>Custo total da dívida</span><span id="costB">—</span></div>
-                  <div class="r"><span>Investimentos</span><span id="fundB">—</span></div>
-                  <div class="r sep"><span>Patrimônio total</span><span id="totB">—</span></div>
-                </div>
-              </div>
-            </div>
-            <div class="pane-head">
-              <div><h3>Os dois caminhos ao longo do tempo</h3><div class="csub" id="p3sub">—</div></div>
-              <div class="seg" id="segMetric">
-                <button data-m="plTotal" class="on">Patrimônio total</button>
-                <button data-m="plFin">Sem contar o imóvel</button>
-                <button data-m="fund">Só investimentos</button>
-                <button data-m="saldo">Quanto ainda devo</button>
-              </div>
-            </div>
-            <div class="chart-holder"><canvas id="chartCmp"></canvas></div>
-            <div class="note-inline" id="p3note">—</div>
-          </div>
-
-          <div class="tabpane" id="p4">
-            <div class="pane-head">
-              <div><h3>De onde vem o patrimônio</h3><div class="csub">O que você tem fica acima da linha zero; o que você deve, abaixo.</div></div>
-              <div class="seg" id="segScen2"><button data-s="A">Investir</button><button data-s="B" class="on">Amortizar</button><button data-s="R">Alugar</button></div>
-            </div>
-            <div class="chart-holder"><canvas id="chartComp"></canvas></div>
-            <div class="note-inline"><b>Como ler.</b> As duas faixas de cima somam o que você <b>tem</b>: investimentos (verde) e o imóvel (azul). A faixa vermelha, abaixo do zero, é o que você <b>deve</b> — ela encolhe até sumir quando o financiamento acaba. A linha escura é o <b>patrimônio líquido</b>: o que você tem menos o que deve. Em valores de hoje o imóvel aparece plano porque, com valorização real zero, ele só preserva poder de compra.</div>
-          </div>
-
-          <div class="tabpane" id="p5">
-            <div class="pane-head">
-              <div><h3>Evolução linha a linha</h3><div class="csub">Escolha o caminho e veja ano a ano o que entra e o que sai.</div></div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <div class="seg" id="segScen3"><button data-s="A">Investir</button><button data-s="B" class="on">Amortizar</button><button data-s="R">Alugar</button></div>
-                <div class="seg" id="segFreq"><button data-f="y" class="on">Anual</button><button data-f="m">Mensal</button></div>
-              </div>
-            </div>
-            <div class="tblwrap"><table class="data"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
-            <div class="note-inline"><b>O que cada coluna quer dizer</b>
-              <ul style="margin:6px 0 0;padding-left:18px">
-                <li><b>Ainda devo</b> — saldo do financiamento no fim do ano. Vai a zero na quitação.</li>
-                <li><b>Parcelas pagas</b> — soma das 12 parcelas do ano (amortização + juros + seguros).</li>
-                <li><b>Aluguel pago</b> — só aparece no caminho <b>Alugar</b>. Quem compra não paga aluguel.</li>
-                <li><b>Seguro + manutenção</b> — o que só o dono paga. Com 0,60% ao ano sobre R$ 1,2 milhão, são R$ 7.200 por ano. <b>IPTU e condomínio não entram</b>: são repassados ao inquilino, então pesam igual nos dois cenários e se cancelam.</li>
-                <li><b>Amortização extra</b> — quanto do seu valor anual foi usado para abater a dívida.</li>
-                <li><b>Foi para investir</b> — quanto sobrou do orçamento mensal de moradia e foi aplicado. Cresce quando a parcela cai e dá um salto quando o financiamento acaba.</li>
-                <li><b>Patrimônio líquido</b> — investimentos + imóvel − dívida.</li>
-              </ul>
-            </div>
-            <div class="tbl-legend">
-              <span><i style="background:#f0f7f4;border:1px solid #c7e3d9"></i>Ano com amortização extra</span>
-              <span><i style="background:#fff;border-bottom:2px solid var(--amort)"></i>Ano da quitação</span>
-              <span><b>(hoje)</b> = valor descontado da inflação, para comparar com o poder de compra de agora</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <div class="insights">
-        <div class="rk">Conclusões</div>
-        <div class="rh" id="insHead">—</div>
-        <div class="ins-grid" id="insGrid"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="robust">
-    <div class="rt">E se a Selic terminal for outra?</div>
-    <div class="rs">Ninguém sabe onde a Selic vai parar. As três respostas são recalculadas do zero em cada cenário: se elas não mudam, a decisão é robusta e você não precisa acertar a previsão.</div>
-    <table>
-      <thead><tr><th>Selic terminal</th><th>Juro real implícito</th><th>Comprar × alugar</th><th>Melhor entrada</th><th>Melhor uso do valor anual</th></tr></thead>
-      <tbody id="robustBody"></tbody>
+<section class="block">
+  <div class="bhead"><span class="n">2</span><div><h2>A parcela conforme o valor do imóvel</h2>
+    <p id="sensSub">Mesmo dinheiro disponível e mesmo financiamento; muda só o preço.</p></div></div>
+  <div class="panel sens">
+    <table class="st">
+      <thead><tr><th>Valor do imóvel</th><th>Custos de aquisição</th><th>Entrada efetiva</th><th>Valor financiado</th><th>1ª parcela</th></tr></thead>
+      <tbody id="sensBody"></tbody>
     </table>
-    <div class="conc" id="robustConc">—</div>
   </div>
+  <p class="sens-note">Imóvel mais caro significa custos de aquisição maiores, entrada efetiva menor e financiamento maior. No sistema SAC a parcela cai todo mês; a tabela mostra a primeira, que é a maior.</p>
+</section>
 
-  <div class="warn-row">
-    <div class="warn"><b>O CET é o número decisivo</b>Exija o CET por escrito e simule em pelo menos quatro bancos. Uma diferença de 1 ponto muda a resposta das três perguntas.</div>
-    <div class="warn"><b>Imóvel não é líquido</b>Vender custa tempo e cerca de 6% de corretagem, não considerados aqui. O que entra no imóvel deixa de estar disponível para emergências — preencha no campo de entrada só o que você pode de fato imobilizar.</div>
-    <div class="warn"><b>Não é recomendação</b>Ferramenta de apoio à decisão do cliente com seu consultor. Não constitui recomendação de investimento nem promessa de rentabilidade.</div>
-  </div>
-
-  <details class="method">
-    <summary>Premissas, fórmulas e limitações do modelo <span class="chev">›</span></summary>
-    <div class="mbody">
-      <h5>Todos os cenários gastam exatamente o mesmo</h5>
-      <p>É a premissa que torna a comparação honesta. Definimos um <b>orçamento mensal de moradia</b> igual à parcela contratual mais os custos de propriedade. Em todos os cenários — comprar com qualquer entrada, amortizar, investir ou alugar — a diferença entre esse orçamento e o que sai do bolso é investida. Nenhum caminho ganha por gastar menos.</p>
-      <p>Consequências: quem aluga investe a diferença entre o aluguel e o custo de ser proprietário; quem amortiza investe a folga da parcela; quando o financiamento acaba, a parcela inteira passa a ser investida.</p>
-      <p><b>Como ler os números por causa disso.</b> O orçamento é definido pelo cenário de compra, então ele muda quando você muda uma premissa do imóvel. Por isso o patrimônio de quem compra com a entrada de referência é insensível ao custo de manutenção — ele sempre gasta o orçamento inteiro — e o efeito de encarecer o imóvel aparece do outro lado, como mais dinheiro sobrando para quem aluga. <b>Compare sempre a diferença entre cenários dentro da mesma configuração</b>, nunca o nível absoluto entre configurações diferentes.</p>
-
-      <h5>O gatilho</h5>
-      <p><code>custo_mensal = (1 + CET)^(1/12) × (1 + TR)^(1/12) − 1</code><br>
-      <code>Selic_gatilho = (1 + custo_mensal ÷ 0,85)^12 − 1</code></p>
-      <p>O <b>CET é usado como a taxa do contrato</b>, porque já é a taxa cheia (juros, seguros MIP/DFI e tarifas). Assim o custo mensal é constante e idêntico ao número do gatilho, sem aproximação. A regra de bolso <code>CET ÷ 0,85</code> erra cerca de 0,1 ponto e não é usada aqui.</p>
-
-      <h5>Por que a comparação é com a Selic média, e não a de hoje</h5>
-      <p>O CET fica travado por até 35 anos; a Selic não. Investir hoje a 14% parece bater um CET de 12,2%, mas o dinheiro continuará rendendo a Selic de 2040, não a de hoje. A decisão compara o custo da dívida com a <b>média geométrica do rendimento líquido até o fim da dívida</b>. Como o resultado depende da média e não do caminho, você não precisa acertar a trajetória — e a tabela de robustez mostra quando nem a média importa.</p>
-      <p>Sobre o IR: com Selic de 10,5% e inflação de 4,5%, sobram 8,93% após o imposto — apenas <b>4,2% reais</b>. O IR tributa também a parcela que só repõe a inflação. O custo da dívida, ao contrário, é integralmente real.</p>
-
-      <h5>Comprar × alugar</h5>
-      <p>Comprando, saem do patrimônio a entrada e os custos de aquisição; entram o imóvel como ativo e a dívida como passivo, e passam a incidir seguro e manutenção. <b>IPTU e condomínio são deliberadamente omitidos</b>: como o locatário os paga por repasse contratual, eles incidem com o mesmo valor nos dois cenários e se cancelam na diferença. Incluí-los só do lado do proprietário superestimaria o custo de comprar. Alugando, o patrimônio inteiro permanece investido e o aluguel é pago do orçamento, corrigido pela inflação. O imóvel é avaliado por <code>valor × (1 + inflação) × (1 + valorização real)</code>.</p>
-
-      <h5>Investir × amortizar</h5>
-      <p>O valor anual vai integralmente para os investimentos, ou integralmente para abater o saldo <b>reduzindo o prazo</b>. A terceira possibilidade — amortizar reduzindo a parcela — foi retirada porque nunca é a melhor escolha na prática: reduzir o prazo mantém mais dinheiro rendendo o custo da dívida, enquanto reduzir a parcela devolve caixa cedo para investir. Quando a dívida é mais cara que os investimentos (o caso em que amortizar faz sentido), reduzir o prazo vence sempre — verificado em 180 combinações de Selic e CET, sem exceção. Quando os investimentos rendem mais, reduzir a parcela até supera reduzir o prazo, mas as duas perdem para simplesmente investir. Em nenhum cenário reduzir a parcela é a resposta certa.</p>
-      <p>A comparação é feita no mês em que a dívida se extingue em <b>ambos</b> os caminhos: a partir daí os fluxos são idênticos e a diferença apenas capitaliza, então medir nesse ponto isola o efeito da decisão do efeito do tempo.</p>
-
-      <h5>Validação executada</h5>
-      <ul>
-        <li><b>Invariância exata no gatilho.</b> Com a Selic parada no gatilho, o patrimônio final é <b>idêntico ao centavo</b> para entradas de R$ 240 mil a R$ 1,2 milhão e entre investir e amortizar. É a prova de que o gatilho é o ponto exato de indiferença das três decisões e de que o modelo não favorece nenhuma.</li>
-        <li><b>Direcionalidade.</b> Acima do gatilho, entrada menor e investir vencem; abaixo, entrada maior e amortizar vencem. Verificado nos dois sentidos.</li>
-        <li><b>Conservação.</b> Principal + correção da TR e caixa total fecham ao centavo nos dois caminhos, com TR de 2% e aportes elevados.</li>
-        <li><b>Formas fechadas.</b> A tabela SAC reproduz juros totais iguais a <code>i × saldo × (n+1)/2</code>.</li>
-        <li><b>Dominância do prazo.</b> Em 180 combinações de Selic inicial, Selic terminal, velocidade de convergência e CET, sempre que amortizar supera investir, reduzir o prazo supera reduzir a parcela — sem exceção. É o que justifica exibir apenas dois caminhos.</li>
-        <li><b>Bordas.</b> Sem valores inválidos com entrada de 100%, inflação de 0% e 30%, Selic de 0% a 25%, TR de 4%, prazo de 1 mês, aluguel zero, aporte zero e patrimônio zero.</li>
-      </ul>
-
-      <h5>Limitações</h5>
-      <ul>
-        <li>Não há volatilidade, cenário estocástico nem risco de sequência de retornos: juro real e inflação são constantes após a convergência.</li>
-        <li>IR de 15% sobre o rendimento de cada mês, sem tabela regressiva e sem diferimento até o resgate — conservador contra o cenário de investir.</li>
-        <li>Custos de venda do imóvel (corretagem, ~6%) e eventual ganho de capital não entram no patrimônio projetado.</li>
-        <li>A taxa do banco costuma melhorar com entrada maior e com relacionamento; o modelo usa uma taxa única, o que subestima levemente a vantagem de entrada maior.</li>
-        <li>Não modela capacidade de crédito: bancos costumam limitar a parcela a cerca de 30% da renda bruta. Confirme com o banco que a parcela inicial cabe antes de decidir pela entrada mínima.</li>
-        <li>Aluguel e imóvel evoluem por premissa determinística; na prática são mercados distintos que podem descolar por anos.</li>
-        <li>O FGTS não é modelado à parte: ele entra somado ao valor anual disponível. Isso ignora que o FGTS só pode ser sacado com financiamento ativo — se você depende dele para amortizar, o valor anual do cenário de aluguel está superestimado, e comprar fica ainda um pouco melhor do que o simulador mostra.</li>
-        <li>Não constitui recomendação de investimento.</li>
-      </ul>
+<section class="block">
+  <div class="bhead"><span class="n">3</span><div><h2>Entrada maior ou menor? Amortizar ou investir?</h2>
+    <p>Cada real que entra no imóvel, na entrada ou amortizando depois, rende o custo do financiamento: garantido e sem imposto. Cada real que fica investido rende a Selic menos 15% de IR.</p></div></div>
+  <div class="split">
+    <div class="panel form">
+      <div class="field key"><label for="selic">Selic média esperada (% a.a.)</label><input id="selic" inputmode="decimal" value="10,50">
+        <div class="note" id="selicNote"></div></div>
+      <div class="field"><label for="infl">Inflação (% a.a.)</label><input id="infl" inputmode="decimal" value="4,50">
+        <div class="note">Usada para mostrar os resultados em valores de hoje.</div></div>
+      <div class="field"><label for="extra">Valor anual para amortizar ou investir (R$)</label><input id="extra" inputmode="decimal" value="60.000">
+        <div class="note">O que você pode destinar por ano, além da parcela. Sai do aporte anual previsto para a independência financeira. <b>Não inclua o FGTS</b>: ele rende perto da inflação, então vale sempre usá-lo para abater a dívida, o que a regra permite a cada 2 anos.</div></div>
     </div>
-  </details>
+    <div class="panel gat">
+      <div class="vs">
+        <div class="side in"><div class="k">O financiamento custa</div><div class="v" id="vCusto">—</div><div class="e" id="eCusto">—</div></div>
+        <div class="x">vs.</div>
+        <div class="side out"><div class="k">Seus investimentos rendem</div><div class="v" id="vLiq">—</div><div class="e" id="eLiq">—</div></div>
+      </div>
+      <div class="verdict" id="verdict">—</div>
+      <div class="scale" aria-hidden="true">
+        <div class="track" id="track">
+          <div class="mark" id="mark"><span id="markL">—</span></div>
+          <div class="needle" id="needle"><span id="needleL">—</span></div>
+        </div>
+        <div class="ends"><span>Selic média 0%</span><span id="endR">—</span></div>
+        <div class="legend">
+          <span><i style="background:var(--in)"></i>Rende mais dentro do imóvel</span>
+          <span><i style="background:var(--out)"></i>Rende mais investido</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="answers">
+    <div class="panel ans" id="ans1"><div class="q">Quanto dar de entrada?</div><div class="a" id="a1">—</div><div class="num" id="n1">—</div><div class="why" id="w1">—</div></div>
+    <div class="panel ans" id="ans2"><div class="q">Depois de comprar: amortizar ou investir o valor anual?</div><div class="a" id="a2">—</div><div class="num" id="n2">—</div><div class="why" id="w2">—</div></div>
+  </div>
+  <p class="foot-ans" id="footAns">—</p>
+</section>
 
-  <footer class="foot">Simulador SAC/SFH · Principia Wealth · valores em poder de compra de hoje, salvo quando alternado para nominais.</footer>
+<section class="block">
+  <div class="bhead"><span class="n">!</span><div><h2>Antes de contar com o FGTS</h2></div></div>
+  <div class="panel fgts">
+    <p class="intro" id="fgtsIntro">—</p>
+    <ul class="conds">
+      <li>
+        <h4>Morar ou trabalhar na cidade do imóvel</h4>
+        <p>Enquanto você morar e trabalhar no exterior, seu FGTS só pode entrar se o seu companheiro morar ou trabalhar em São Paulo (a união estável tem o mesmo tratamento do casamento). Na volta, trabalhar em São Paulo já basta; pela residência, é preciso comprovar pelo menos 1 ano.</p>
+        <blockquote>“O imóvel deve localizar-se: a) no mesmo município onde o trabalhador exerça sua ocupação laboral principal [...]; ou b) no mesmo município onde o trabalhador comprove a sua residência há pelo menos 1 ano [...]”</blockquote>
+        <blockquote>“No caso de um dos cônjuges comprovar residência no exterior, é permitida utilização do FGTS de ambos na aquisição de imóvel localizado no município de residência ou de ocupação laboral principal do cônjuge residente no Brasil [...]”</blockquote>
+      </li>
+      <li>
+        <h4>Ser a moradia de vocês</h4>
+        <p>A finalidade de moradia é declarada sob as penas da lei. Comprar para deixar o imóvel alugado enquanto estiverem fora conflita com essa exigência.</p>
+        <blockquote>“O imóvel deve ser residencial urbano e destinar-se à moradia do trabalhador, devendo esta última condição ser declarada por ele sob as penas da lei.”</blockquote>
+      </li>
+      <li>
+        <h4>Não ter outro imóvel residencial na mesma região</h4>
+        <p>Participação em imóvel residencial em São Paulo ou na região metropolitana impede o uso do FGTS quando passa de 40% daquele imóvel. Confira a sua fração em cada imóvel herdado.</p>
+        <blockquote>“Não ser proprietário, possuidor, promitente comprador, usufrutuário, cessionário de outro imóvel residencial, concluído ou em construção, localizado [...] no mesmo município de sua residência, incluindo os municípios limítrofes ou os municípios integrantes da mesma Região Metropolitana”</blockquote>
+        <blockquote>“Não configura situação impeditiva ao uso do FGTS: [...] ser proprietário ou promitente comprador de fração ideal igual ou inferior a 40% de um ou mais imóveis, desde que não ultrapasse esse percentual em cada imóvel.”</blockquote>
+      </li>
+    </ul>
+    <p class="src">Trechos do Manual FGTS – Utilização na Moradia Própria (CAIXA, Agente Operador do FGTS). As regras podem mudar: confirme as condições com o banco na época da compra.</p>
+  </div>
+</section>
+
+<details class="method">
+  <summary>Como o simulador calcula</summary>
+  <div class="mbody">
+    <ul>
+      <li><b>Mesmo gasto em todos os caminhos.</b> O orçamento mensal é a parcela com a entrada mínima. Quem dá entrada maior paga parcela menor e investe a diferença; quem amortiza mantém a parcela e, quando a dívida acaba, investe a parcela inteira. Nenhum caminho ganha por gastar menos.</li>
+      <li><b>Gatilho.</b> <code>custo mensal = (1 + CET)^(1/12) × (1 + TR)^(1/12) − 1</code> e <code>Selic de empate = (1 + custo mensal ÷ 0,85)^12 − 1</code>. Com a Selic média exatamente no gatilho, entrada mínima, entrada máxima, amortizar e investir chegam ao mesmo patrimônio.</li>
+      <li><b>Onde se mede.</b> No fim do prazo do financiamento, quando a dívida acabou em todos os caminhos, descontada a inflação.</li>
+      <li><b>Entrada.</b> O FGTS entra sempre na entrada, porque rende menos que a dívida. Os custos de aquisição saem dos recursos próprios. Os bancos financiam até 80% do imóvel. A parte dos recursos próprios que não vai para a entrada fica investida.</li>
+      <li><b>Premissas.</b> IR de 15% sobre o rendimento; valor anual corrigido pela inflação; taxa do financiamento única para qualquer entrada; SAC.</li>
+      <li><b>Fora do cálculo.</b> Reforma, volatilidade dos investimentos, custos de venda do imóvel e depósitos futuros de FGTS.</li>
+    </ul>
+    <p style="margin:12px 0 0">Ferramenta de apoio à decisão. Não constitui recomendação de investimento nem promessa de rentabilidade.</p>
+  </div>
+</details>
+
+<footer class="f">Principia Wealth. Simulador de financiamento no sistema SAC. Parcelas em valores do dia da compra; resultados das decisões em valores de hoje.</footer>
 </div>
 <script>
-"use strict";
-(function(){
-/* ================= formatação ================= */
-const BRL0=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-const NUM0=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
-const money=v=>BRL0.format(Math.round(v));
-const n0f=v=>NUM0.format(Math.round(v));
-const pct=v=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';
-const pct1=v=>(v*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
-const kbrl=v=>{const a=Math.abs(v);
-  if(a>=1e6)return 'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi';
-  if(a>=1e3)return 'R$ '+(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:0})+'k';
-  return 'R$ '+Math.round(v);};
-const anoTxt=m=>{const y=m/12,r=Math.round(y*10)/10;return 'ano '+(Math.abs(r-Math.round(r))<1e-9?String(Math.round(r)):r.toFixed(1).replace('.',','));};
+/* Motor do simulador — funções puras, sem DOM */
+(function (root) {
+  "use strict";
+  var IR = 0.15, LTV = 0.80, TETO_FGTS = 2250000;
+  var mR = function (a) { return Math.pow(1 + a, 1 / 12) - 1; };
 
-/* ================= motor ================= */
-const IR=0.15;
-const mR=a=>Math.pow(1+a,1/12)-1;
-
-/* Trajetória da Selic: converge linearmente de hoje até a terminal informada
-   e fica constante depois. O que decide não é a trajetória, e sim a MÉDIA
-   do período — por isso o gatilho é lido como "média que empata". */
-function selicAt(p,t){
-  if(p.convMeses<=0||t>=p.convMeses)return p.selicTerm;
-  return p.selicHoje+(p.selicTerm-p.selicHoje)*(t/p.convMeses);
-}
-
-/* Custo efetivo do financiamento: CET já embute juros, seguros e tarifas;
-   a TR corrige o saldo e multiplica. Constante ao longo do contrato. */
-function gatilho(p){
-  const CET_m=Math.pow(1+p.cetA,1/12)-1;
-  const custo_m=(1+CET_m)*(1+p.TR_a_m)-1;
-  return {custo_m:custo_m,custo_a:Math.pow(1+custo_m,12)-1,
-          selic:Math.pow(1+custo_m/(1-IR),12)-1};
-}
-
-function prep(p){
-  p.TR_a_m=mR(p.TR_a);p.TR_m=p.TR_a_m;
-  p.i_m=Math.pow(1+p.cetA,1/12)-1;
-  p.custo_m=(1+p.i_m)*(1+p.TR_m)-1;
-  p.g_m=mR((1+p.infl)*(1+p.valorizReal)-1);
-  p.INF_m=mR(p.infl);
-  p.cumNet=new Float64Array(p.H+1);
-  for(let t=0;t<p.H;t++)p.cumNet[t+1]=p.cumNet[t]+Math.log(1+mR(selicAt(p,t))*(1-IR));
-  return p;
-}
-const fwdNet=(p,t,m)=>{m=Math.max(1,Math.min(m,p.H-t));return Math.exp((p.cumNet[t+m]-p.cumNet[t])/m)-1;};
-const selicEquiv=liqM=>Math.pow(1+liqM/(1-IR),12)-1;
-
-
-/* cronograma SAC contratual puro — base do orçamento comum */
-function refSchedule(p,Fin){
-  const out=new Array(p.H).fill(0);
-  let S=Fin,n=p.n0;
-  for(let t=0;t<p.H;t++){
-    if(S>1e-6&&n>0){S*=(1+p.TR_m);const A=S/n;out[t]=A+p.i_m*S;S-=A;n--;}
+  function prep(x) {
+    var p = Object.assign({}, x);
+    p.i_m = Math.pow(1 + p.cet, 1 / 12) - 1;
+    p.TR_m = mR(p.tr);
+    p.custo_m = (1 + p.i_m) * (1 + p.TR_m) - 1;
+    p.custo_a = Math.pow(1 + p.custo_m, 12) - 1;
+    p.liq_m = mR(p.selic) * (1 - IR);
+    p.liq_a = Math.pow(1 + p.liq_m, 12) - 1;
+    p.gatilho = Math.pow(1 + p.custo_m / (1 - IR), 12) - 1;
+    p.INF_m = mR(p.infl);
+    return p;
   }
-  return out;
-}
-function budgetArray(p,refParc){
-  const b=new Array(p.H);
-  for(let t=0;t<p.H;t++)b[t]=refParc[t]+p.P*Math.pow(1+p.g_m,t+1)*p.custoPropA/12;
-  return b;
-}
-function sim(p,budget,opts){
-  const alugar=!!opts.alugar,E=alugar?0:opts.entrada;
-  const custoAq=alugar?0:p.pctAq*p.P;
-  let S=alugar?0:Math.max(0,p.P-E),n=p.n0,fund=p.W0-E-custoAq;
-  let quit=(S<=1e-6)?-1:null,minFund=fund,tNeg=null;
-  let tAm=0,tExAm=0,tTRc=0,tJu=0,tExInv=0;
-  let rJu=0,rTRc=0,rAluguel=0,rProp=0;
-  const rows=new Array(p.H);
-  for(let t=0;t<p.H;t++){
-    const defl=Math.pow(1+p.INF_m,t+1);
-    const liq=mR(selicAt(p,t))*(1-IR);
-    let am=0,ju=0,par=0;
-    if(!alugar&&S>1e-6&&n>0){
-      const c=S*p.TR_m;S+=c;tTRc+=c;rTRc+=c/defl;
-      am=Math.min(S,S/n);
-      ju=p.i_m*S;
-      par=am+ju;
-      tAm+=am;tJu+=ju;rJu+=ju/defl;
-      S-=am;n--;
-      if(S<1e-6){S=0;n=0;if(quit===null)quit=t;}
+
+  /* Limites de entrada para um valor de imóvel P.
+     FGTS não paga ITBI/escritura/registro: os custos saem dos recursos próprios. */
+  function limites(p, P) {
+    var custo = P * p.pctAq;
+    var fgtsOk = P <= TETO_FGTS;
+    var fgtsUso = fgtsOk ? Math.min(p.fgts, P) : 0;
+    var livre = p.proprios - custo;              /* recursos próprios após os custos */
+    var faltaCusto = Math.max(0, -livre);
+    var Emax = Math.min(P, fgtsUso + Math.max(0, livre));
+    var Emin = Math.min(P, Math.max(P * (1 - LTV), fgtsUso));
+    return {
+      P: P, custo: custo, fgtsOk: fgtsOk, fgtsUso: fgtsUso, faltaCusto: faltaCusto,
+      disponivel: fgtsUso + p.proprios, Emax: Emax, Emin: Emin,
+      inviavel: faltaCusto > 0.5 || Emax < Emin - 0.5
+    };
+  }
+
+  function cronograma(p, F) {
+    var out = new Array(p.n0).fill(0), S = F, n = p.n0;
+    for (var t = 0; t < p.n0; t++) {
+      if (S > 1e-6 && n > 0) { S *= (1 + p.TR_m); var A = S / n; out[t] = A + p.i_m * S; S -= A; n--; }
     }
-    let invest=0,exUse=0;
-    const exT=p.extra*Math.pow(1+p.infl,Math.floor(t/12)+1);
-    if(exT>0&&(t+1)%12===0){
-      const inv=alugar||opts.mode==='A';
-      if(inv||S<=1e-6){invest+=exT;tExInv+=exT;}
-      else{
-        exUse=Math.min(exT,S);S-=exUse;tExAm+=exUse;
-        invest+=exT-exUse;tExInv+=exT-exUse;
-        if(S<1e-6){S=0;n=0;if(quit===null)quit=t;}
-        else if(opts.mode!=='C'&&am>1e-9)n=Math.max(1,Math.ceil(S/am-1e-9));
+    return out;
+  }
+
+  /* Uma simulação: mesmo orçamento mensal em todos os caminhos.
+     mode 'A' = investir o valor anual; 'B' = amortizar reduzindo prazo. */
+  function sim(p, L, E, budget, mode) {
+    var S = Math.max(0, L.P - E), n = p.n0;
+    var fund = p.proprios - L.custo - (E - L.fgtsUso);
+    var quit = S <= 1e-6 ? -1 : null, juros = 0;
+    for (var t = 0; t < p.n0; t++) {
+      var am = 0, par = 0;
+      if (S > 1e-6 && n > 0) {
+        S += S * p.TR_m;
+        am = Math.min(S, S / n);
+        var ju = p.i_m * S; juros += ju / Math.pow(1 + p.INF_m, t + 1);
+        par = am + ju; S -= am; n--;
+        if (S < 1e-6) { S = 0; n = 0; if (quit === null) quit = t; }
       }
+      var inv = budget[t] - par;
+      if (p.extra > 0 && (t + 1) % 12 === 0) {
+        var exT = p.extra * Math.pow(1 + p.infl, Math.floor(t / 12) + 1);
+        if (mode === 'A' || S <= 1e-6) inv += exT;
+        else {
+          var use = Math.min(exT, S); S -= use; inv += exT - use;
+          if (S < 1e-6) { S = 0; n = 0; if (quit === null) quit = t; }
+          else if (am > 1e-9) n = Math.max(1, Math.ceil(S / am - 1e-9));
+        }
+      }
+      fund = fund * (1 + p.liq_m) + inv;
     }
-    const imovel=alugar?0:p.P*Math.pow(1+p.g_m,t+1);
-    const custoProp=alugar?0:p.P*Math.pow(1+p.g_m,t+1)*p.custoPropA/12;
-    const aluguelT=alugar?p.aluguel*Math.pow(1+p.INF_m,t+1):0;
-    const outflow=alugar?aluguelT:(par+custoProp);
-    invest+=budget[t]-outflow;
-    if(alugar)rAluguel+=aluguelT/defl;else rProp+=custoProp/defl;
-    fund=fund*(1+liq)+invest;
-    if(fund<minFund)minFund=fund;
-    if(fund<0&&tNeg===null)tNeg=t;
-    const plFin=fund-S,plTotal=plFin+imovel;
-    rows[t]={t:t,saldo:S,am:am,ju:ju,par:par,custoProp:custoProp,aluguel:aluguelT,
-      outflow:outflow,exUse:exUse,invest:invest,fund:fund,imovel:imovel,
-      plFin:plFin,plTotal:plTotal,
-      rSaldo:S/defl,rAm:am/defl,rJu:ju/defl,rPar:par/defl,
-      rCustoProp:custoProp/defl,rAluguel:aluguelT/defl,rOutflow:outflow/defl,
-      rInvest:invest/defl,rFund:fund/defl,rImovel:imovel/defl,
-      rPlFin:plFin/defl,rPlTotal:plTotal/defl};
+    var defl = Math.pow(1 + p.INF_m, p.n0);
+    return { real: (fund - S) / defl, quit: quit, juros: juros };
   }
-  return {rows:rows,quit:quit,alugar:alugar,entrada:E,mode:opts.mode,custoAq:custoAq,
-    minFund:minFund,tNeg:tNeg,tAm:tAm,tExAm:tExAm,tTRc:tTRc,tJu:tJu,tExInv:tExInv,
-    custo:tJu+tTRc,rCusto:rJu+rTRc,rAluguelTot:rAluguel,rPropTot:rProp,
-    fund0:p.W0-E-custoAq};
-}
 
-/* ================= parsing ================= */
-function pnum(s){if(s==null)return NaN;
-  let x=String(s).replace(/[^\d,.-]/g,'').trim();
+  function analisar(x) {
+    var p = prep(x);
+    var L = limites(p, p.P);
+    var budget = cronograma(p, Math.max(0, L.P - L.Emin));
+    var r = {
+      p: p, L: L,
+      AminE: sim(p, L, L.Emin, budget, 'A'), BminE: sim(p, L, L.Emin, budget, 'B'),
+      AmaxE: sim(p, L, L.Emax, budget, 'A'), BmaxE: sim(p, L, L.Emax, budget, 'B')
+    };
+    var vMin = Math.max(r.AminE.real, r.BminE.real), vMax = Math.max(r.AmaxE.real, r.BmaxE.real);
+    r.faixa = L.Emax - L.Emin;
+    r.difEntrada = vMax - vMin;                 /* >0: entrada maior vence */
+    r.entradaAlvo = r.difEntrada >= 0 ? L.Emax : L.Emin;
+    var alvoMax = r.entradaAlvo === L.Emax;
+    r.A = alvoMax ? r.AmaxE : r.AminE;
+    r.B = alvoMax ? r.BmaxE : r.BminE;
+    r.difModo = r.B.real - r.A.real;           /* >0: amortizar vence */
+    r.parcelaMax = cronograma(p, Math.max(0, L.P - L.Emax));
+    r.parcelaMin = cronograma(p, Math.max(0, L.P - L.Emin));
+    r.perto = Math.abs(p.selic - p.gatilho) < 0.0025;
+    return r;
+  }
+
+  function sensibilidade(x, valores) {
+    var p = prep(x);
+    return valores.map(function (P) {
+      var L = limites(p, P);
+      var F = Math.max(0, P - L.Emax);
+      var c = cronograma(p, F);
+      return { P: P, L: L, F: F, parcela: c[0], ultima: c.filter(function (v) { return v > 0; }).pop() || 0 };
+    });
+  }
+
+  root.PWEngine = { prep: prep, limites: limites, cronograma: cronograma, sim: sim,
+    analisar: analisar, sensibilidade: sensibilidade, IR: IR, LTV: LTV, TETO_FGTS: TETO_FGTS };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function(){
+"use strict";
+var E=window.PWEngine;
+var BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+var NUM=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+function money(v){return BRL.format(Math.round(v));}
+function pct(v,d){d=d==null?2:d;return (v*100).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d})+'%';}
+function pp(v){return (v*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ponto'+(Math.abs(v*100)>=1.995?'s':'');}
+function $(id){return document.getElementById(id);}
+function pnum(s){
+  if(s==null)return NaN;
+  var x=String(s).replace(/[^\d,.-]/g,'').trim();
   if(x===''||x==='-')return NaN;
   if(x.indexOf(',')>-1)x=x.replace(/\./g,'').replace(',','.');
-  else{const pr=x.split('.');if(pr.length>1&&pr[pr.length-1].length===3)x=x.replace(/\./g,'');}
-  const v=parseFloat(x);return isFinite(v)?v:NaN;}
-const ppct=s=>{const v=pnum(s);return isNaN(v)?NaN:v/100;};
-const $=id=>document.getElementById(id);
-
-const DEF={P:1200000,entrada:240000,n0:420,aluguel:5000,W0:600000,
-  extra:60000,cetA:0.122,TR_a:0,
-  selicHoje:0.14,selicTerm:0.105,convAnos:3,infl:0.045,horizA:35,
-  pctAq:0.04,custoPropA:0.006,valorizReal:0,ltv:0.80,H:540,start:null};
-const V=Object.assign({},DEF);
-
-const F={imovel:$('imovel'),entrada:$('entrada'),prazo:$('prazo'),aluguel:$('aluguel'),
-  w0:$('w0'),extra:$('extra'),cet:$('cet'),trA:$('trA'),selicTerm:$('selicTerm'),
-  pctAq:$('pctAq'),custoProp:$('custoProp'),valoriz:$('valoriz'),ltv:$('ltv'),
-  infl:$('infl'),convAnos:$('convAnos'),horiz:$('horiz'),data:$('dataIni'),
-  custoAqR:$('custoAqR'),entMax:$('entMax')};
-const selN=$('selicNum');
-(function(){const d=new Date();F.data.value=d.toISOString().slice(0,10);DEF.start=F.data.value;})();
-
-let PV=true,metric='plTotal',scen2='B',scen3='B',freq='y';
-let cRent=null,cEnt=null,cCmp=null,cComp=null,LAST=null;
-
-const MONEY_FIELDS=['imovel','entrada','aluguel','w0','extra'];
-const PCT_FIELDS=['cet','trA','selicTerm','pctAq','custoProp','valoriz','infl','selicNum'];
-
-function readState(){
-  let v;
-  v=pnum(F.imovel.value);if(v>=0)V.P=v;
-  v=pnum(F.entrada.value);if(v>=0)V.entrada=v;
-  v=Math.round(pnum(F.prazo.value));if(v>0)V.n0=Math.min(v,480);
-  v=pnum(F.aluguel.value);if(v>=0)V.aluguel=v;
-  v=pnum(F.w0.value);if(v>=0)V.W0=v;
-  v=pnum(F.extra.value);if(v>=0)V.extra=v;
-  v=ppct(F.cet.value);if(!isNaN(v)&&v>=0)V.cetA=v;
-  v=ppct(F.trA.value);if(!isNaN(v)&&v>=0)V.TR_a=Math.min(v,0.2);
-  v=ppct(F.selicTerm.value);if(!isNaN(v)&&v>=0)V.selicTerm=Math.min(v,0.5);
-  v=ppct(F.pctAq.value);if(!isNaN(v)&&v>=0)V.pctAq=v;
-  v=ppct(F.custoProp.value);if(!isNaN(v)&&v>=0)V.custoPropA=v;
-  v=ppct(F.valoriz.value);if(!isNaN(v)&&v>-0.5)V.valorizReal=v;
-  v=ppct(F.ltv.value);if(!isNaN(v)&&v>0)V.ltv=Math.min(1,v);
-  v=ppct(F.infl.value);if(!isNaN(v)&&v>-0.5)V.infl=v;
-  v=pnum(F.convAnos.value);if(v>=0)V.convAnos=Math.min(v,40);
-  v=pnum(F.horiz.value);if(v>0)V.horizA=Math.max(3,Math.min(v,45));
-  v=ppct(selN.value);if(!isNaN(v)&&v>=0)V.selicHoje=v;
-  const p=Object.assign({},V,{convMeses:Math.round(V.convAnos*12),H:540});
-  return prep(p);
+  else{var pr=x.split('.');if(pr.length>1&&pr[pr.length-1].length===3)x=x.replace(/\./g,'');}
+  var v=parseFloat(x);return isFinite(v)?v:NaN;
 }
-function analyze(p,Eref){
-  const B=budgetArray(p,refSchedule(p,Math.max(0,p.P-Eref)));
-  return {B:B,
-    A:sim(p,B,{entrada:Eref,mode:'A'}),Bm:sim(p,B,{entrada:Eref,mode:'B'}),
-    R:sim(p,B,{alugar:true})};
+var MONEY=['P','fgts','proprios','extra'],PCT=['pctAq','cet','tr','selic','infl'];
+var DEF={P:1200000,pctAq:4,fgts:224000,proprios:384000,cet:12.2,tr:0,prazo:420,selic:10.5,infl:4.5,extra:60000};
+function val(id,min,max){var v=pnum($(id).value);if(isNaN(v))v=DEF[id];if(min!=null)v=Math.max(min,v);if(max!=null)v=Math.min(max,v);return v;}
+function read(){
+  return {P:val('P',0),pctAq:val('pctAq',0,30)/100,fgts:val('fgts',0),proprios:val('proprios',0),
+    cet:val('cet',0,60)/100,tr:val('tr',0,20)/100,n0:Math.round(val('prazo',1,480)),
+    selic:val('selic',0,60)/100,infl:val('infl',0,40)/100,extra:val('extra',0)};
 }
-const MODES=['A','B'];
-const modeOf=(r,k)=>k==='B'?r.Bm:(k==='R'?r.R:r[k]);
-const NOME={A:'investir o valor anual',B:'amortizar reduzindo prazo'};
-const NOMEC={A:'Investir',B:'Amortizar'};
-
-const RK={plTotal:'rPlTotal',plFin:'rPlFin',fund:'rFund',saldo:'rSaldo',imovel:'rImovel',
-  par:'rPar',aluguel:'rAluguel',custoProp:'rCustoProp',invest:'rInvest',
-  am:'rAm',ju:'rJu',outflow:'rOutflow'};
-const gv=(row,k)=>PV?row[RK[k]]:row[k];
-
-function notes(){
-  const sn=$('selicNote');sn.className='field-note';
-  const anos=V.convAnos;
-  sn.innerHTML='Você não precisa acertar a trajetória da Selic — só a <b>média</b> do período. '+
-    'O simulador leva a Selic de '+pct(V.selicHoje)+' até '+pct(V.selicTerm)+' em '+
-    (anos===1?'1 ano':(anos+' anos'))+' e a mantém ali. Preencha a terminal com a mediana do Boletim Focus '+
-    'para os anos à frente; o <b>gatilho</b> acima diz qual média empataria a decisão.';
-  const realImp=(1+V.selicTerm)/(1+V.infl)-1;
-  sn.innerHTML+=' Juro real implícito na terminal: <b>'+pct1(realImp)+'</b>.';
-  if(realImp>0.08){sn.innerHTML+=' Acima de 8% real é agressivo para uma média de décadas e infla o cenário de alugar e investir.';sn.classList.add('alert');}
-  else if(realImp<0.01){sn.innerHTML+=' Abaixo de 1% real é pessimista para o Brasil e infla o cenário de comprar.';sn.classList.add('alert');}
-}
+function anoDe(m){return Math.ceil((m+1)/12);}
 
 function render(){
-  const p=readState();notes();
-  const g=gatilho(p);
-  const custoAq=p.pctAq*p.P;
-  const Emin=Math.max(0,Math.min(p.P,p.P*(1-p.ltv)));
-  const EmaxHard=Math.max(0,Math.min(p.P,p.W0-custoAq));
-  const EmaxSafe=EmaxHard;
-  const inviavel=EmaxHard<Emin-0.5;
-  let Eref=V.entrada,ajuste='';
-  if(Eref<Emin){Eref=Emin;ajuste='Entrada mínima de '+money(Emin)+' — os bancos financiam no máximo '+pct1(p.ltv)+' do imóvel.';}
-  if(Eref>EmaxHard){Eref=Math.max(Emin,EmaxHard);ajuste='Com '+money(p.W0)+' de patrimônio e '+money(custoAq)+' de custos de aquisição, a entrada máxima possível é '+money(EmaxHard)+'.';}
-  F.custoAqR.value=money(custoAq)+'  ('+pct1(p.pctAq)+')';
-  F.entMax.value=money(Math.max(0,EmaxHard));
-  const en=$('entradaNote');en.className='field-note';
-  if(inviavel){en.textContent='Seu patrimônio não cobre a entrada mínima de '+money(Emin)+' mais '+money(custoAq)+' de custos de aquisição.';en.classList.add('alert');}
-  else if(ajuste){en.textContent=ajuste+' Valor ajustado na simulação.';en.classList.add('alert');}
-  else{en.textContent=(p.P>0?pct1(Eref/p.P)+' do imóvel · ':'')+'financia '+money(Math.max(0,p.P-Eref))+' · sobram '+money(p.W0-Eref-custoAq)+' investidos.';en.classList.add('good');}
+  var x=read(),r=E.analisar(x),p=r.p,L=r.L;
 
-  const r=analyze(p,Eref);
-  const hz=Math.min(p.H-1,Math.round(p.horizA*12)-1);
-  const HY=Math.round((hz+1)/12);
-  const refParc=refSchedule(p,Math.max(0,p.P-Eref));
-  const parcela1=refParc[0];
-  const compr=null;
+  /* ---------- 1. a conta da entrada ---------- */
+  $('custoR').value=money(L.custo);
+  var h='';
+  h+='<div class="ln'+(L.fgtsOk?'':' off')+'"><span>FGTS</span><span>'+money(x.fgts)+'</span></div>';
+  h+='<div class="ln"><span>Recursos próprios</span><span>'+money(x.proprios)+'</span></div>';
+  h+='<div class="ln sum"><span>Dinheiro disponível</span><span>'+money(L.disponivel)+'</span></div>';
+  h+='<div class="ln minus"><span>ITBI, escritura e registro ('+pct(x.pctAq,1)+')</span><span>− '+money(L.custo)+'</span></div>';
+  h+='<div class="ln total"><span>Entrada efetiva</span><span>'+money(L.Emax)+'</span></div>';
+  h+='<div class="ln pct"><span>'+(x.P>0?pct(L.Emax/x.P,1)+' do imóvel':'')+'</span><span>'+
+     (L.Emax<x.P?'financia '+money(x.P-L.Emax):'sem financiamento')+'</span></div>';
+  var sobra=x.proprios-L.custo-(L.Emax-L.fgtsUso);
+  if(sobra>0.5)h+='<div class="ln"><span>Fica investido</span><span>'+money(sobra)+'</span></div>';
+  $('lines').innerHTML=h;
+  var c=r.parcelaMax,p1=c[0],ult=c.filter(function(v){return v>0;}).pop()||0;
+  $('parcV').innerHTML=p1>0?NUM.format(Math.round(p1))+'<small>R$/mês</small>':'—';
+  $('parcSub').textContent=p1>0?'No SAC ela cai todo mês, até '+money(ult)+' na última.':'Sem financiamento.';
+  var w=[];
+  if(!L.fgtsOk)w.push('Acima de R$ 2.250.000 o FGTS não pode ser usado na compra.');
+  if(L.faltaCusto>0.5)w.push('Os recursos próprios não cobrem os custos de aquisição: faltam '+money(L.faltaCusto)+', que não podem sair do FGTS.');
+  else if(L.Emax<L.Emin-0.5)w.push('A entrada efetiva fica abaixo dos 20% que os bancos exigem ('+money(L.Emin)+'). Faltam '+money(L.Emin-L.Emax)+'.');
+  $('warn1').textContent=w.join(' ');
+  var pn=$('pNote');
+  pn.className='note'+(L.fgtsOk?'':' alert');
 
-  /* investir x amortizar, medido quando a dívida acaba nos dois caminhos */
-  const decT=Math.max(0,Math.min(p.H-1,Math.max.apply(null,MODES.map(k=>{const q=modeOf(r,k).quit;return q===null?p.H-1:q;}))));
-  const plDec={};MODES.forEach(k=>plDec[k]=modeOf(r,k).rows[decT].rPlFin);
-  const plInv=plDec.A,plAm=plDec.B;
-  const gapAI=plAm-plInv;                       /* >0: amortizar vence */
-  const escalaModo=Math.max(1,Math.abs(plAm),Math.abs(plInv));
-  const melhorModo=gapAI>=0?'B':'A';
-  const margem=Math.abs(gapAI);
-  const empateModo=margem<escalaModo*0.005;
+  /* ---------- 2. sensibilidade ---------- */
+  /* faixa de ±R$ 300.000 em torno do valor informado, de R$ 100.000 em R$ 100.000 */
+  var base=Math.round(x.P),vals=[];
+  for(var k=-3;k<=3;k++){var v=base+k*100000;if(v>0)vals.push(v);}
+  if(!vals.length)vals=[base];
+  var S=E.sensibilidade(x,vals),maxP=Math.max.apply(null,S.map(function(s){return s.L.inviavel?0:s.parcela;}))||1;
+  $('sensBody').innerHTML=S.map(function(s){
+    var cur=Math.round(s.P)===Math.round(x.P);
+    var cel=(!s.L.inviavel&&s.F<0.5)?'<div class="bar"><span class="trk"></span><b>à vista</b></div>':s.L.inviavel
+      ?'<div class="bar"><em>'+(s.L.faltaCusto>0.5?'recursos não cobrem os custos':'entrada abaixo de 20%')+'</em></div>'
+      :'<div class="bar"><span class="trk"><i style="width:'+Math.max(4,s.parcela/maxP*100).toFixed(1)+'%"></i></span><b>'+money(s.parcela)+'</b></div>';
+    return '<tr class="'+(cur?'cur':'')+'"><td>'+money(s.P)+(cur?'<span class="tag">simulado</span>':'')+'</td><td>'+money(s.L.custo)+
+      '</td><td>'+money(s.L.Emax)+'</td><td>'+money(s.F)+'</td><td class="pc">'+cel+'</td></tr>';
+  }).join('');
+  $('sensSub').textContent='De '+money(vals[0])+' a '+money(vals[vals.length-1])+', com '+money(L.disponivel)+' disponíveis, CET de '+pct(x.cet)+' e '+x.n0+' meses. Muda só o preço do imóvel.';
 
-  /* comprar x alugar, no horizonte */
-  const buy=modeOf(r,melhorModo),rent=r.R;
-  const plBuy=buy.rows[hz].rPlTotal,plRent=rent.rows[hz].rPlTotal;
-  const difBR=plBuy-plRent;
-  const escalaBR=Math.max(Math.abs(plBuy),Math.abs(plRent),1);
-  const empateBR=Math.abs(difBR)<escalaBR*0.02;
-  let viradaBR=null;
-  for(let t=hz;t>0;t--){
-    const a=buy.rows[t].rPlTotal>rent.rows[t].rPlTotal,b=buy.rows[t-1].rPlTotal>rent.rows[t-1].rPlTotal;
-    if(a!==b){viradaBR=t;break;}}
+  /* ---------- 3. gatilho ---------- */
+  $('vCusto').textContent=pct(p.custo_a);
+  $('eCusto').textContent='CET '+pct(x.cet)+(x.tr>0?' corrigido pela TR de '+pct(x.tr):'')+'. Garantido e sem IR.';
+  $('vLiq').textContent=pct(p.liq_a);
+  $('eLiq').textContent='Selic média de '+pct(x.selic)+', menos 15% de IR.';
 
-  /* curva de entrada */
-  const NG=13,grid=[];
-  const Etop=Math.max(Emin,EmaxSafe,Eref);
-  for(let i=0;i<NG;i++)grid.push(Emin+(Etop-Emin)*i/(NG-1));
-  const curva=grid.map(E=>{
-    const vA=sim(p,r.B,{entrada:E,mode:'A'}).rows[hz].rPlTotal;
-    const vB=sim(p,r.B,{entrada:E,mode:'B'}).rows[hz].rPlTotal;
-    return {E:E,v:Math.max(vA,vB)};});
-  const curOrd=curva.slice().sort((a,b)=>b.v-a.v);
-  const bestE=curOrd[0],piorE=curOrd[curOrd.length-1];
-  const ampl=bestE.v-piorE.v;
-  const faixaE=Etop-Emin;
-  const empateE=faixaE<1||ampl<faixaE*0.05;
-  const subirE=curva[NG-1].v>curva[0].v;
-  const difE=curva.slice(1).map((c,i)=>c.v-curva[i].v),tolE=faixaE*0.004;
-  const monoUp=difE.every(d=>d>=-tolE),monoDown=difE.every(d=>d<=tolE);
-  const serrilhado=!monoUp&&!monoDown;
-  /* Um ótimo interior só é recomendável se superar AMBOS os extremos por margem
-     material — caso contrário o argmax da grade é ruído, não conselho. */
-  const extBest=Math.max(curva[0].v,curva[NG-1].v);
-  const otimoInterior=bestE.E>Emin+0.5&&bestE.E<Etop-0.5&&(bestE.v-extBest)>faixaE*0.02;
-  const alvoE=otimoInterior?bestE.E:(subirE?Etop:Emin);
+  var realImp=(1+x.selic)/(1+x.infl)-1,sn=$('selicNote');
+  sn.className='note';
+  sn.innerHTML='A média durante todo o financiamento, não a de hoje. Referência: projeção de longo prazo do Boletim Focus. Juro real implícito: <b>'+pct(realImp,1)+'</b>.';
+  if(realImp>0.08){sn.innerHTML+=' Acima de 8% real é agressivo para uma média de décadas.';sn.className='note alert';}
+  else if(realImp<0.01){sn.innerHTML+=' Abaixo de 1% real é pessimista para o Brasil.';sn.className='note alert';}
 
-  /* vida da dívida e média projetada */
-  const vida=(r.A.quit===null?p.n0:r.A.quit+1);
-  const selicMedia=selicEquiv(fwdNet(p,0,vida));
-
-  LAST={p:p,r:r,g:g,hz:hz,Eref:Eref,melhorModo:melhorModo,curva:curva,decT:decT};
-
-  /* ---------- bloco 1: gatilho ---------- */
-  $('bnCusto').textContent=pct(g.custo_a);
-  $('bnCustoExp').innerHTML='CET '+pct(p.cetA)+' + TR '+pct(p.TR_a)+
-    '. É o retorno garantido e sem IR de cada real colocado dentro do imóvel.';
-  $('bnGatilho').textContent=pct(g.selic);
-  $('bnGatilhoExp').innerHTML='Chamamos de <b>gatilho</b>. É maior que o custo do financiamento ('+pct(g.custo_a)+
-    ') porque <b>15% do que você ganha investindo vai para o imposto de renda</b>, e a dívida não tem imposto.';
-  $('bnSelicMedia').textContent=pct(selicMedia);
-  $('bnSelicExp').innerHTML='Média do período, de '+pct(p.selicHoje)+' hoje a '+pct(p.selicTerm)+' em '+p.convAnos+
-    ' anos. '+(selicMedia>g.selic?'<b>Acima</b> do gatilho: rende mais fora do imóvel.'
-      :'<b>Abaixo</b> do gatilho: rende mais dentro do imóvel.');
-
-  const vb=$('verdictBox');
-  if(empateE&&empateModo){
-    vb.className='verdict-box dyn';$('vtag').textContent='Quase indiferente';
-    $('vtxt').innerHTML='Rendimento projetado ('+pct(selicMedia)+') e custo da dívida ('+pct(g.custo_a)+
-      ') estão empatados. Nenhuma decisão financeira move o patrimônio de forma relevante — decida por liquidez e segurança.';
-  }else if(selicMedia>g.selic){
-    vb.className='verdict-box inv';$('vtag').textContent='Manter a dívida e investir';
-    $('vtxt').innerHTML='Seus investimentos rendem '+pct(selicMedia)+' líquidos contra '+pct(g.custo_a)+
-      ' do financiamento. Como rendem mais: <b>entrada mínima, prazo longo e dinheiro investido</b>.';
+  var dentro=x.selic<=p.gatilho,vd=$("verdict"),folga=p.gatilho-x.selic;
+  if(r.perto){
+    vd.className='verdict tie';
+    vd.innerHTML='Custo da dívida e rendimento praticamente empatados: as decisões mexem pouco no patrimônio.<small>O empate acontece com Selic média de '+pct(p.gatilho)+'; sua premissa é '+pct(x.selic)+'.</small>';
+  }else if(dentro){
+    vd.className='verdict in';
+    vd.innerHTML='O dinheiro rende mais dentro do imóvel: entrada maior e amortizar.<small>A resposta só muda se a Selic média passar de <b>'+pct(p.gatilho)+'</b>, '+pp(folga)+' acima da sua premissa.</small>';
   }else{
-    vb.className='verdict-box amo';$('vtag').textContent='Antecipar a dívida';
-    $('vtxt').innerHTML='O financiamento custa '+pct(g.custo_a)+', travado por '+(p.n0/12).toFixed(0)+
-      ' anos, contra '+pct(selicMedia)+' líquidos dos seus investimentos. A Selic de hoje ('+pct(p.selicHoje)+
-      ') não muda isso: ela cai, o CET não. A leitura é <b>entrada maior e amortização</b>.';
+    vd.className='verdict out';
+    vd.innerHTML='O dinheiro rende mais investido: entrada menor e investir.<small>A resposta só muda se a Selic média cair abaixo de <b>'+pct(p.gatilho)+'</b>, '+pp(-folga)+' abaixo da sua premissa.</small>';
   }
+  var dom=Math.max(0.20,Math.ceil((Math.max(p.gatilho,x.selic)+0.03)*20)/20);
+  var cl=function(v){return Math.max(1,Math.min(99,v/dom*100));};
+  var g=cl(p.gatilho),s=cl(x.selic);
+  $('track').style.background='linear-gradient(90deg,var(--in) 0%,var(--in) '+g+'%,var(--out) '+g+'%,var(--out) 100%)';
+  $('mark').style.left=g+'%';$('markL').textContent='empate '+pct(p.gatilho);
+  $('needle').style.left=s+'%';$('needleL').textContent='sua premissa '+pct(x.selic);
+  $('endR').textContent=pct(dom,0);
 
-  const dom=25,cl=x=>Math.max(2,Math.min(98,x*100/dom*100));
-  const gp=cl(g.selic),sp=cl(selicMedia),hp=cl(p.selicHoje);
-  $('thresh').style.left=gp+'%';
-  const nd=$('needle');nd.style.left=sp+'%';nd.setAttribute('data-lbl','média projetada '+pct(selicMedia));
-  const nh=$('needleHoje');nh.style.left=hp+'%';nh.setAttribute('data-lbl','hoje '+pct(p.selicHoje));
-  nh.style.display=Math.abs(hp-sp)<5?'none':'block';
-  $('scaleMid').textContent='gatilho '+pct(g.selic);
-  $('scaleTrack').style.background='linear-gradient(90deg,var(--amort) 0%,var(--amort) '+(gp-.6)+
-    '%,#e6dfd2 '+(gp-.6)+'%,#e6dfd2 '+(gp+.6)+'%,var(--invest) '+(gp+.6)+'%,var(--invest) 100%)';
-
-  /* ---------- bloco 2: as três respostas ---------- */
-  const yAlugarPre=p.P>0?p.aluguel*12/p.P:0;
-  const setAns=(i,tone,a,n,w,flag)=>{
-    $('ans'+i).className='ans tone-'+tone;$('a'+i).innerHTML=a;$('n'+i).innerHTML=n;$('w'+i).innerHTML=w;
-    const f=$('f'+i);if(flag){f.innerHTML=flag;f.classList.add('on');}else f.classList.remove('on');};
-
-  let f1=null;
-  if(inviavel)f1='Seu patrimônio não cobre nem a entrada mínima mais os custos de aquisição. A comparação abaixo é ilustrativa.';
-  else if(rent.tNeg!==null)f1='Alugando, o orçamento se esgota no '+anoTxt(rent.tNeg+1)+': o aluguel continua depois que a parcela teria acabado.';
-  const tone1=(inviavel||empateBR)?'tie':(difBR>0?'buy':'rent');
-  const a1=inviavel?'Ainda não é possível'
-    :(empateBR?'Tanto faz, financeiramente':(difBR>0?'Comprar':'Continuar alugando'));
-  const n1=inviavel?('faltam '+money(Emin+custoAq-p.W0))
-    :(empateBR?'diferença de apenas '+money(Math.abs(difBR))+' em '+HY+' anos'
-      :money(Math.abs(difBR))+' a mais em '+HY+' anos');
-  let w1;
-  if(empateBR){
-    w1='Comprar e alugar chegam praticamente ao mesmo patrimônio em '+HY+
-       ' anos. Decida por critérios não financeiros: estabilidade, liberdade de mudar e por quanto tempo pretende morar no imóvel.';
-  }else if(difBR>0){
-    w1='Em '+HY+' anos, <b>quem compra</b> chega a '+money(Math.abs(difBR))+' a mais de patrimônio do que quem segue alugando. O aluguel de '+
-       money(p.aluguel)+'/mês nunca acaba; a parcela, sim.';
-    if(viradaBR!==null&&viradaBR>0)w1+=' A compra passa à frente a partir do <b>'+anoTxt(viradaBR+1)+'</b>.';
+  /* ---------- respostas ---------- */
+  var A1=$('ans1'),A2=$('ans2');
+  var parcMin=r.parcelaMin[0],parcMax=r.parcelaMax[0];
+  if(L.inviavel){
+    A1.className='panel ans na';$('a1').textContent='A compra ainda não fecha';$('n1').textContent='Veja o aviso na conta da entrada';
+    $('w1').textContent='Com o dinheiro informado não é possível pagar os custos de aquisição e a entrada mínima de 20%.';
+  }else if(r.faixa<1){
+    A1.className='panel ans na';$('a1').textContent='A que couber';$('n1').textContent=money(L.Emax)+' de entrada';
+    $('w1').textContent='Com esses valores a entrada mínima e a máxima coincidem: não há escolha a fazer.';
+  }else if(r.perto){
+    A1.className='panel ans tie';$('a1').textContent='Tanto faz';$('n1').textContent='Diferença de '+money(Math.abs(r.difEntrada));
+    $('w1').innerHTML='Entre '+money(L.Emin)+' e '+money(L.Emax)+' o resultado quase não muda. Escolha pela parcela: de '+money(parcMin)+' a '+money(parcMax)+'.';
+  }else if(r.difEntrada>=0){
+    A1.className='panel ans in';$('a1').textContent='A maior possível: '+money(L.Emax);
+    $('n1').textContent=money(r.difEntrada)+' a mais do que a entrada mínima de '+money(L.Emin);
+    $('w1').innerHTML='O financiamento custa <b>'+pct(p.custo_a)+'</b> e os investimentos rendem <b>'+pct(p.liq_a)+'</b> líquidos. Cada real a mais na entrada economiza mais juros do que renderia investido, e a 1ª parcela cai de '+money(parcMin)+' para '+money(parcMax)+'.';
   }else{
-    w1='Em '+HY+' anos, <b>quem segue alugando</b> chega a '+money(Math.abs(difBR))+
-       ' a mais de patrimônio do que quem compra. O aluguel custa '+pct1(yAlugarPre)+' ao ano do valor do imóvel, contra '+
-       pct(g.custo_a)+' do financiamento mais '+money(custoAq)+' de custos de aquisição.';
-    if(viradaBR!==null)w1+=' Comprar só passaria à frente no <b>'+anoTxt(viradaBR+1)+'</b>.';
+    A1.className='panel ans out';$('a1').textContent='A mínima exigida: '+money(L.Emin);
+    $('n1').textContent=money(-r.difEntrada)+' a mais do que a entrada máxima de '+money(L.Emax);
+    $('w1').innerHTML='Os investimentos rendem <b>'+pct(p.liq_a)+'</b> líquidos e o financiamento custa <b>'+pct(p.custo_a)+'</b>. Vale financiar mais e deixar '+money(L.Emax-L.Emin)+' investidos. A 1ª parcela sobe de '+money(parcMax)+' para '+money(parcMin)+'; a tabela acima usa a entrada máxima.';
   }
-  setAns(1,tone1,a1,n1,w1,f1);
 
-  const f2=inviavel?'Só vale se a compra for viabilizada: hoje o patrimônio informado não cobre a entrada mínima.':null;
-  const tone2=empateE?'tie':(subirE?'buy':'rent');
-  const a2=empateE?'Tanto faz'
-    :(otimoInterior?'Um valor intermediário':(subirE?'A maior possível':'A mínima necessária'));
-  const n2=empateE?money(Eref)+' (a que couber)':money(alvoE)+' de entrada';
-  let w2;
-  if(empateE){
-    w2='Entre '+money(Emin)+' e '+money(Etop)+' o patrimônio final muda apenas '+money(ampl)+
-       '. Escolha pela parcela que cabe no orçamento e pelo quanto quer manter líquido.';
-  }else if(subirE){
-    w2='O financiamento custa '+pct(g.custo_a)+' e seus investimentos rendem '+pct(selicMedia)+
-       ' líquidos. Como a dívida é mais cara, cada real a mais na entrada vale a pena: ir de '+money(Emin)+' para '+money(alvoE)+
-       ' rende '+money(ampl)+' a mais e derruba a parcela inicial de '+money(parcela1)+' para '+
-       money(refSchedule(p,Math.max(0,p.P-alvoE))[0])+'.';
+  if(L.inviavel){
+    A2.className='panel ans na';$('a2').textContent='Depende de a compra fechar';$('n2').textContent='—';$('w2').textContent='Ajuste os valores da compra primeiro.';
+  }else if(x.extra<=0||r.B.quit===-1){
+    A2.className='panel ans na';$('a2').textContent='Não se aplica';
+    $('n2').textContent=x.extra<=0?'Preencha o valor anual':'Não há financiamento';
+    $('w2').textContent=x.extra<=0?'Sem um valor anual disponível não há dinheiro a direcionar.':'Com essa entrada o imóvel é pago à vista.';
+  }else if(r.perto){
+    A2.className='panel ans tie';$('a2').textContent='Tanto faz';$('n2').textContent='Diferença de '+money(Math.abs(r.difModo));
+    $('w2').textContent='Amortizar e investir chegam praticamente ao mesmo patrimônio. Amortizar encurta a dívida; investir mantém o dinheiro disponível.';
+  }else if(r.difModo>=0){
+    var qa=r.B.quit==null?x.n0-1:r.B.quit;
+    A2.className='panel ans in';$('a2').textContent='Amortizar';
+    $('n2').textContent=money(r.difModo)+' a mais do que investir';
+    $('w2').innerHTML='Abater a dívida rende <b>'+pct(p.custo_a)+'</b>, garantido e sem IR, contra '+pct(p.liq_a)+' investindo. A parcela continua a mesma e o financiamento termina no <b>ano '+anoDe(qa)+'</b>, e não no ano '+Math.ceil(x.n0/12)+'. A partir daí, a parcela inteira vira investimento.';
   }else{
-    w2='Seus investimentos rendem '+pct(selicMedia)+' líquidos contra '+pct(g.custo_a)+
-       ' do financiamento. Como o dinheiro rende mais fora, financiar mais e manter o restante investido vale '+
-       money(ampl)+' a mais — desde que a parcela caiba com folga e você realmente invista.';
+    A2.className='panel ans out';$('a2').textContent='Investir';
+    $('n2').textContent=money(-r.difModo)+' a mais do que amortizar';
+    $('w2').innerHTML='Os investimentos rendem <b>'+pct(p.liq_a)+'</b> líquidos, acima dos '+pct(p.custo_a)+' do financiamento. O valor anual vai para a carteira e o financiamento segue o prazo contratado.';
   }
-  setAns(2,tone2,a2,n2,w2,f2);
+  $('footAns').textContent='Diferenças de patrimônio em valores de hoje, medidas no fim do prazo do financiamento (ano '+Math.ceil(x.n0/12)+'), com o mesmo gasto mensal em todos os caminhos.';
 
-  const f3=inviavel?'Só vale se a compra for viabilizada.':null;
-  const semDecisao=p.extra<=0;
-  const tone3=(semDecisao||empateModo)?'tie':(melhorModo==='A'?'rent':'buy');
-  const a3=semDecisao?'Não se aplica':(empateModo?'Tanto faz':NOMEC[melhorModo]);
-  const n3=semDecisao?'preencha o valor anual'
-    :(empateModo?'diferença de apenas '+money(margem)
-      :money(margem)+' a mais do que '+(melhorModo==='A'?'amortizar':'investir'));
-  let w3;
-  if(semDecisao){
-    w3='Sem um valor anual disponível não há dinheiro a direcionar. Preencha o campo <b>Valor anual para investir ou amortizar</b>.';
-  }else if(empateModo){
-    w3='Investir e amortizar chegam quase ao mesmo lugar. Prefira <b>amortizar</b> se quer menos anos de dívida, ou <b>investir</b> se quer manter liquidez.';
-  }else if(melhorModo==='A'){
-    w3='Seus investimentos rendem '+pct(selicMedia)+' líquidos contra '+pct(g.custo_a)+
-       ' do financiamento. Como rendem mais, <b>investir</b> os '+money(p.extra)+' por ano vale '+money(margem)+
-       ' a mais do que abater a dívida (medido no '+anoTxt(decT+1)+', quando a dívida acaba nos dois caminhos).';
-  }else{
-    w3='O financiamento custa '+pct(g.custo_a)+' contra '+pct(selicMedia)+
-       ' líquidos dos seus investimentos. Abater a dívida é o melhor retorno garantido e livre de IR disponível: vale '+
-       money(margem)+' a mais e antecipa a quitação para o '+anoTxt((modeOf(r,'B').quit||decT)+1)+'.';
-  }
-  setAns(3,tone3,a3,n3,w3,f3);
+  /* ---------- FGTS ---------- */
+  var tot=L.fgtsUso+x.proprios;
+  $('fgtsIntro').innerHTML=x.fgts>0
+    ?'O FGTS representa <b>'+money(L.fgtsUso)+'</b> dos '+money(tot)+' disponíveis para a compra ('+pct(tot>0?L.fgtsUso/tot:0,0)+'). Ele só é liberado se as condições abaixo valerem na data da compra.'
+    :'Nenhum FGTS informado. Se for usá-lo, as condições abaixo precisam valer na data da compra.';
+}
 
-  /* ---------- cards A/B/C/D ---------- */
-  MODES.forEach(k=>{const s=modeOf(r,k);
-    $('kl'+k).textContent='Patrimônio financeiro no '+anoTxt(decT+1);
-    $('pl'+k).textContent=money(PV?s.rows[decT].rPlFin:s.rows[decT].plFin);
-    $('quit'+k).textContent=s.quit===null?'não quita':anoTxt(s.quit+1);
-    $('cost'+k).textContent=money(PV?s.rCusto:s.custo);
-    $('fund'+k).textContent=money(gv(s.rows[decT],'fund'));
-    $('tot'+k).textContent=money(gv(s.rows[decT],'plTotal'));
-    $('card'+k).classList.remove('win');});
-  if(!semDecisao&&!empateModo){const topo=Math.max.apply(null,MODES.map(k=>plDec[k])),epsW=escalaModo*0.001;
-    MODES.forEach(k=>{if(plDec[k]>=topo-epsW)$('card'+k).classList.add('win');});}
-
-  $('pvTxt').innerHTML=PV
-    ?'<b>Gráficos e tabela abaixo</b> em <b>valores de hoje</b> — já descontada a inflação de '+pct(p.infl)+
-     ' a.a., então os números têm o poder de compra de agora. As três respostas acima usam sempre esta base.'
-    :'<b>Gráficos e tabela abaixo</b> em <b>valores do futuro</b> — o número que vai aparecer no extrato, sem descontar a inflação de '+pct(p.infl)+
-     ' a.a. Servem para conferência, não para decidir. <b>As três respostas acima não mudam</b>: elas ficam sempre em valores de hoje, que é a única base em que faz sentido comparar.';
-  $('p3sub').textContent='Comparados no '+anoTxt(decT+1)+', quando a dívida acaba nos dois caminhos · entrada de '+money(Eref)+' · valor anual de '+money(p.extra);
-  $('p1note').innerHTML='Quem compra tem imóvel ('+money(p.P)+' hoje) menos a dívida; quem aluga tem só investimentos. Os '+
-    money(custoAq)+' de custos de aquisição saem no mês zero.';
-  $('p2note').innerHTML=(empateE
-    ?'Curva <b>plana</b>: o tamanho da entrada quase não muda o resultado.'
-    :'Curva '+(subirE?'<b>ascendente</b>: quanto maior a entrada, maior o patrimônio final, porque a dívida custa mais do que o dinheiro rende.'
-      :'<b>descendente</b>: quanto menor a entrada, maior o patrimônio final, porque o dinheiro rende mais do que a dívida custa.'))+
-    ' A linha tracejada é quem não compra.';
-  setNote3();
-
-  /* ---------- conclusões ---------- */
-  const retLiq=Math.pow(1+fwdNet(p,0,hz+1),12)-1;
-  const valorizNom=(1+p.infl)*(1+p.valorizReal)-1;
-  const yAlugar=yAlugarPre;
-  const yVista=retLiq+p.custoPropA-valorizNom;
-  const yFin=g.custo_a+p.custoPropA-valorizNom;
-  const jurosTot=PV?buy.rCusto:buy.custo;
-
-  const headBR=empateBR
-    ? 'Comprar e continuar alugando chegam <b>praticamente ao mesmo patrimônio</b>'
-    : (difBR>0
-      ? '<b>Comprar</b> constrói mais patrimônio que continuar alugando'
-      : '<b>Continuar alugando</b> e investir a diferença constrói mais patrimônio que comprar');
-  const headE=empateE
-    ? 'o tamanho da entrada quase não muda o resultado'
-    : (subirE?'a entrada deve ser <b>a maior possível</b>':'a entrada deve ser <b>a mínima necessária</b>');
-  const headM=empateModo
-    ? 'amortizar e investir se equivalem'
-    : (melhorModo==='A'?'o valor anual deve ir para <b>investimentos</b>'
-      :(melhorModo==='D'?'o valor anual deve <b>alternar</b> entre investir e amortizar conforme o juro'
-        :'o valor anual deve ir para <b>amortizar</b>'));
-  $('insHead').innerHTML=empateBR&&empateE&&empateModo
-    ? 'Nesta configuração <b>nenhuma das três decisões move o patrimônio de forma relevante</b> — o que decide são liquidez, segurança e preferência de vida.'
-    : headBR+'. Se comprar, '+headE+' e '+headM+'.';
-
-  const ins=[];
-  ins.push({k:'Quanto custa morar aqui, dos dois jeitos',v:pct1(yAlugar)+' alugando',cls:'inv',
-    t:'<b>Alugando:</b> '+money(p.aluguel)+' × 12 = '+money(p.aluguel*12)+' por ano, sobre um imóvel de '+money(p.P)+
-      ' → <b>'+pct1(yAlugar)+' ao ano</b>.<br><b>Sendo dona</b>, o custo existe mas é invisível — e tem dois pedaços. '+
-      'Na parte que você paga à vista, o custo é o rendimento que deixa de ganhar ('+pct1(retLiq)+
-      ') + seguro e manutenção ('+pct1(p.custoPropA)+') − valorização do imóvel ('+pct1(valorizNom)+') = <b>'+pct1(yVista)+
-      '</b>. Na parte financiada, é o próprio financiamento ('+pct(g.custo_a)+') + seguro e manutenção ('+pct1(p.custoPropA)+
-      ') − valorização ('+pct1(valorizNom)+') = <b>'+pct1(yFin)+'</b>.<br>'+
-      (yAlugar<Math.min(yVista,yFin)?'<b>Alugar é a forma mais barata de morar neste imóvel.</b>'
-      :(yAlugar>Math.max(yVista,yFin)?'<b>Comprar é a forma mais barata de morar neste imóvel.</b>'
-      :'<b>Comprar compensa na parte à vista, mas a parte financiada sai mais cara que o aluguel</b> — o que empurra para uma entrada maior.'))});
-
-  const folga=selicMedia-g.selic;
-  ins.push({k:'A média que empata',v:pct(g.selic),cls:Math.abs(folga)<0.005?'neu':(folga>0?'inv':'amo'),
-    t:'Se a <b>média</b> da Selic no período ficar acima de '+pct(g.selic)+', investir vence; abaixo, amortizar vence. Sua premissa produz <b>'+
-      pct(selicMedia)+'</b>. Para virar a decisão, a Selic terminal teria que ir para perto de <b>'+
-      pct(Math.max(0,p.selicTerm-folga))+'</b>.'});
-
-  if(p.extra>0){
-    ins.push({k:'O que mais constrói patrimônio',v:money(p.extra)+'/ano',cls:'amo',
-      t:'O hábito de <b>aportar '+money(p.extra)+' por ano</b> e investir a parcela quando o financiamento acabar responde por '+
-        money(gv(buy.rows[hz],'fund'))+' do patrimônio em '+HY+' anos. '+
-        (empateModo
-          ? 'A escolha entre amortizar e investir muda apenas '+money(margem)+' — a disciplina de aportar pesa muito mais.'
-          : 'Ainda assim, direcionar esse valor para '+(melhorModo==='A'?'investimentos':'a dívida')+' vale '+money(margem)+' a mais: vale escolher certo.')});
-  }else{
-    ins.push({k:'Informe o valor anual',v:'—',cls:'neu',vsm:true,
-      t:'Sem um valor anual disponível para investir, as decisões 2 e 3 perdem sentido: não há dinheiro para direcionar. Preencha o campo para comparar os caminhos.'});
-  }
-
-  {
-    ins.push({k:'Liquidez',v:money(Math.max(0,p.W0-Eref-custoAq)),cls:'neu',
-      t:'É o que sobra investido no dia da compra, depois da entrada e de '+money(custoAq)+
-        ' de custos de aquisição. Imóvel não paga emergência: manter parte do patrimônio líquido e acessível é condição, não preferência.'});
-  }
-
-  $('insGrid').innerHTML=ins.map(i=>'<div class="ins"><div class="k">'+i.k+'</div><div class="v '+
-    (i.cls||'')+(i.vsm?' sm':'')+'">'+i.v+'</div><div class="t">'+i.t+'</div></div>').join('');
-
-  /* ---------- robustez ---------- */
-  const base0=Math.round(p.selicTerm*400)/400;
-  const reais=[-0.03,-0.015,0,0.015,0.03].map(d=>Math.max(0.005,base0+d));
-  let rb='',compraVence=0,entradaSobe=0,amortizaVence=0;
-  reais.forEach(rl=>{
-    const p2=prep(Object.assign({},p,{selicTerm:rl}));
-    const r2=analyze(p2,Eref);
-    const d2=Math.max(0,Math.min(p2.H-1,Math.max.apply(null,MODES.map(k=>{const q=modeOf(r2,k).quit;return q===null?p2.H-1:q;}))));
-    const pd2={};MODES.forEach(k=>pd2[k]=modeOf(r2,k).rows[d2].rPlFin);
-    const inv2=pd2.A,am2=pd2.B,gap2=am2-inv2;
-    const esc2=Math.max(1,Math.abs(am2),Math.abs(inv2));
-    const mm=gap2>=0?'B':'A';
-    const emp2=Math.abs(gap2)<esc2*0.005;
-    const b2=modeOf(r2,mm).rows[hz].rPlTotal,a2=r2.R.rows[hz].rPlTotal,d=b2-a2;
-    const empBR2=Math.abs(d)<Math.max(Math.abs(b2),Math.abs(a2),1)*0.02;
-    const gr=[];for(let i=0;i<7;i++)gr.push(Emin+(Etop-Emin)*i/6);
-    const cv=gr.map(E=>({E:E,v:sim(p2,r2.B,{entrada:E,mode:mm}).rows[hz].rPlTotal}));
-    const bo=cv.slice().sort((a,b)=>b.v-a.v)[0];
-    const amp2=bo.v-cv.slice().sort((a,b)=>a.v-b.v)[0].v;
-    const empE2=faixaE<1||amp2<faixaE*0.05;
-    const sobe2=cv[6].v>cv[0].v;
-    if(d>0)compraVence++;if(!empE2&&sobe2)entradaSobe++;if(!emp2&&mm==='B')amortizaVence++;
-    const base=Math.abs(rl-base0)<0.0001;
-    rb+='<tr class="'+(base?'base':'')+'"><td>'+pct1(rl)+(base?' · atual':'')+'</td>'+
-      '<td>'+pct1((1+rl)/(1+p.infl)-1)+'</td>'+
-      '<td class="'+(d>0?'win':'lose')+'">'+(empBR2?'empate':(d>0?'comprar +'+kbrl(d):'alugar +'+kbrl(-d)))+'</td>'+
-      '<td>'+(empE2?'indiferente':(sobe2?'máxima':'mínima'))+'</td>'+
-      '<td>'+(emp2?'indiferente':NOMEC[mm])+'</td></tr>';
+var raf=null;function go(){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(render);}
+Object.keys(DEF).forEach(function(id){
+  var el=$(id);if(!el)return;
+  el.addEventListener('input',go);
+  el.addEventListener('blur',function(){
+    var v=pnum(el.value);
+    if(!isNaN(v)){
+      if(MONEY.indexOf(id)>=0)el.value=NUM.format(Math.round(Math.max(0,v)));
+      else if(PCT.indexOf(id)>=0)el.value=v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      else el.value=String(Math.round(v));
+    }
+    go();
   });
-  $('robustBody').innerHTML=rb;
-  $('robustConc').innerHTML='<b>Leitura.</b> '+
-    (compraVence===5?'Comprar vence nos cinco cenários de Selic terminal — a decisão de comprar é robusta e não depende da previsão.'
-      :(compraVence===0?'Alugar vence nos cinco cenários — a decisão de não comprar agora é robusta e não depende da previsão.'
-      :'A decisão de comprar depende de onde a Selic parar: comprar vence em '+compraVence+' dos 5 cenários. Quanto mais alta a Selic terminal, melhor fica alugar e investir.'))+
-    ' '+(entradaSobe===5?'A entrada maior vence em todos os cenários.'
-      :(entradaSobe===0?'A entrada mínima vence ou empata em todos os cenários.'
-      :'O tamanho ideal da entrada muda com a Selic terminal — sinal de que a resposta está perto do gatilho.'))+
-    ' '+(amortizaVence===5?'Amortizar vence em todos os cenários.'
-      :(amortizaVence===0?'Investir o valor anual vence ou empata em todos os cenários.'
-      :'A escolha entre investir e amortizar também depende da Selic terminal — sinal de que ela está perto do gatilho.'))+
-    ' Todas as linhas vêm da simulação completa, não da regra do gatilho.';
-
-  drawRent(p,r,buy,hz);drawEnt(p,curva,rent.rows[hz].rPlTotal,Eref,hz);
-  drawCmp(p,r,decT);drawComp(p,r);buildTable(p,r);
-}
-function setNote3(){
-  const L={plTotal:'patrimônio total — investimentos + imóvel, menos o que ainda deve',
-    plFin:'patrimônio sem contar o imóvel — investimentos menos a dívida',
-    fund:'só os investimentos, sem descontar a dívida',
-    saldo:'quanto ainda falta pagar do financiamento'};
-  $('p3note').innerHTML='Métrica: <b>'+L[metric]+'</b>, em '+(PV?'valores de hoje':'valores nominais')+
-    '. Os dois caminhos gastam exatamente o mesmo por mês; muda só o destino do valor anual.';
-}
-
-/* ================= gráficos ================= */
-const COL={A:'#c2751b',B:'#0f7a5a',C:'#2a7d6a',D:'#5b4bc4'};
-const sample=H=>{const st=Math.max(1,Math.round(H/180)),ix=[];
-  for(let t=0;t<H;t+=st)ix.push(t);if(ix[ix.length-1]!==H-1)ix.push(H-1);return ix;};
-const baseOpts=()=>({responsive:true,maintainAspectRatio:false,animation:false,
-  interaction:{mode:'index',intersect:false},
-  plugins:{legend:{position:'top',align:'end',labels:{boxWidth:12,boxHeight:12,usePointStyle:true,pointStyle:'line',font:{family:'Inter',size:12},color:'#3a465a'}},
-    tooltip:{backgroundColor:'#132a4d',padding:11,titleFont:{family:'Inter',size:12},bodyFont:{family:'Inter',size:12.5},
-      callbacks:{title:i=>'Ano '+i[0].label,label:c=>' '+c.dataset.label+': '+BRL0.format(c.parsed.y)}}},
-  scales:{x:{title:{display:true,text:'anos',font:{family:'Inter',size:11},color:'#6b7789'},
-    ticks:{maxTicksLimit:11,font:{family:'Inter',size:11},color:'#6b7789'},grid:{color:'#eef1f5'}},
-    y:{ticks:{font:{family:'Inter',size:11},color:'#6b7789',callback:v=>kbrl(v)},grid:{color:'#eef1f5'}}}});
-function mk(ref,id,cfg){if(ref)ref.destroy();return new Chart($(id).getContext('2d'),cfg);}
-const key=k=>PV?RK[k]:k;
-
-function drawRent(p,r,buy,hz){
-  const H=hz+1,ix=sample(H),lab=ix.map(t=>+((t+1)/12).toFixed(2)),kk=key('plTotal');
-  const ds=[
-    {label:'Comprando',data:ix.map(t=>Math.round(buy.rows[t][kk])),borderColor:'#0f7a5a',
-     backgroundColor:'#0f7a5a',tension:.18,pointRadius:0,borderWidth:2.8},
-    {label:'Continuando a alugar',data:ix.map(t=>Math.round(r.R.rows[t][kk])),borderColor:'#c2751b',
-     backgroundColor:'#c2751b',tension:.18,pointRadius:0,borderWidth:2.8,borderDash:[6,4]}];
-  if(cRent&&cRent.data.datasets.length===2){cRent.data.labels=lab;
-    cRent.data.datasets.forEach((d,i)=>{d.data=ds[i].data;});cRent.update('none');}
-  else cRent=mk(cRent,'chartRent',{type:'line',data:{labels:lab,datasets:ds},options:baseOpts()});
-  const anos=[5,10,15,20,25,30,35,40,45].filter(y=>y*12-1<=hz);
-  let h='<thead><tr><th>Ano</th><th>Comprando</th><th>Alugando</th><th>Diferença</th></tr></thead><tbody>';
-  anos.forEach(y=>{const t=y*12-1,b=buy.rows[t][kk],a=r.R.rows[t][kk],d=b-a;
-    h+='<tr class="'+(t===hz?'hl':'')+'"><td>'+y+'</td><td>'+money(b)+'</td><td>'+money(a)+
-      '</td><td class="'+(d>0?'win':'lose')+'">'+(d>0?'+':'')+money(d)+'</td></tr>';});
-  if(anos.indexOf(Math.round((hz+1)/12))<0){const b=buy.rows[hz][kk],a=r.R.rows[hz][kk],d=b-a;
-    h+='<tr class="hl"><td>'+((hz+1)/12).toFixed(0)+'</td><td>'+money(b)+'</td><td>'+money(a)+
-      '</td><td class="'+(d>0?'win':'lose')+'">'+(d>0?'+':'')+money(d)+'</td></tr>';}
-  $('rentTbl').innerHTML=h+'</tbody>';
-}
-
-function drawEnt(p,curva,plRent,Eref,hz){
-  const defl=PV?1:Math.pow(1+p.INF_m,hz+1);
-  const lab=curva.map(c=>kbrl(c.E));
-  const vals=curva.map(c=>Math.round(c.v*defl));
-  let iCur=0,best=1e18;
-  curva.forEach((c,i)=>{const d=Math.abs(c.E-Eref);if(d<best){best=d;iCur=i;}});
-  const ds=[
-    {label:'Comprando',data:vals,borderColor:'#132a4d',backgroundColor:'#132a4d',tension:.15,
-     borderWidth:2.8,pointRadius:curva.map((c,i)=>i===iCur?6:2.5),
-     pointBackgroundColor:curva.map((c,i)=>i===iCur?'#c2751b':'#132a4d'),
-     pointBorderColor:curva.map((c,i)=>i===iCur?'#fff':'#132a4d'),pointBorderWidth:2},
-    {label:'Não comprar (alugar)',data:vals.map(()=>Math.round(plRent*defl)),borderColor:'#c2751b',
-     backgroundColor:'#c2751b',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:0}];
-  const o=baseOpts();
-  o.scales.x.title.text='entrada';
-  o.plugins.tooltip.callbacks.title=i=>'Entrada de '+i[0].label;
-  o.plugins.tooltip.callbacks.label=c=>' '+c.dataset.label+': '+BRL0.format(c.parsed.y);
-  cEnt=mk(cEnt,'chartEnt',{type:'line',data:{labels:lab,datasets:ds},options:o});
-  let h='<thead><tr><th>Entrada</th><th>% do imóvel</th><th>Financiado</th><th>1ª parcela</th><th>Patrimônio em '+
-    ((hz+1)/12).toFixed(0)+' anos</th><th>vs. entrada mínima</th></tr></thead><tbody>';
-  const passo=Math.max(1,Math.round(curva.length/6));
-  const base=curva[0].v;
-  for(let i=0;i<curva.length;i+=passo){const c=curva[i],d=c.v-base;
-    h+='<tr class="'+(i===iCur?'cur':'')+'"><td>'+money(c.E)+'</td><td>'+pct1(p.P>0?c.E/p.P:0)+
-      '</td><td>'+money(p.P-c.E)+'</td><td>'+money(refSchedule(p,Math.max(0,p.P-c.E))[0])+
-      '</td><td>'+money(c.v*defl)+'</td><td class="'+(d>1?'win':(d<-1?'lose':''))+'">'+
-      (Math.abs(d)<1?'—':(d>0?'+':'')+money(d*defl))+'</td></tr>';}
-  $('entTbl').innerHTML=h+'</tbody>';
-}
-
-function drawCmp(p,r,decT){
-  const H=Math.max(24,decT+1),ix=sample(H),lab=ix.map(t=>+((t+1)/12).toFixed(2)),kk=key(metric);
-  const ds=MODES.map(k=>({label:NOMEC[k],data:ix.map(t=>Math.round(modeOf(r,k).rows[t][kk])),
-    borderColor:COL[k],backgroundColor:COL[k],
-    tension:.18,pointRadius:0,borderWidth:2.6}));
-  if(cCmp&&cCmp.data.datasets.length===ds.length){cCmp.data.labels=lab;
-    cCmp.data.datasets.forEach((d,i)=>{d.data=ds[i].data;});cCmp.update('none');}
-  else cCmp=mk(cCmp,'chartCmp',{type:'line',data:{labels:lab,datasets:ds},options:baseOpts()});
-}
-
-function drawComp(p,r){
-  const hz=LAST.hz,H=hz+1,s=modeOf(r,scen2),ix=sample(H),lab=ix.map(t=>+((t+1)/12).toFixed(2));
-  const kf=key('fund'),ki=key('imovel'),ks=key('saldo'),kp=key('plTotal');
-  const ds=[
-    {label:'Investimentos',data:ix.map(t=>Math.round(s.rows[t][kf])),borderColor:'#0f7a5a',
-     backgroundColor:'rgba(15,122,90,.20)',fill:'origin',tension:.18,pointRadius:0,borderWidth:1.6,order:4},
-    {label:'Imóvel',data:ix.map(t=>Math.round(s.rows[t][kf]+s.rows[t][ki])),borderColor:'#5a6bb0',
-     backgroundColor:'rgba(90,107,176,.18)',fill:0,tension:.18,pointRadius:0,borderWidth:1.6,order:5},
-    {label:'O que você deve',data:ix.map(t=>-Math.round(s.rows[t][ks])),borderColor:'#b4302a',
-     backgroundColor:'rgba(180,48,42,.18)',fill:'origin',tension:.18,pointRadius:0,borderWidth:1.6,order:1},
-    {label:'Patrimônio líquido',data:ix.map(t=>Math.round(s.rows[t][kp])),borderColor:'#132a4d',
-     backgroundColor:'#132a4d',fill:false,tension:.18,pointRadius:0,borderWidth:2.8,order:0}];
-  const o=baseOpts();
-  /* as duas primeiras séries são empilhadas: o tooltip mostra o valor próprio,
-     não o acumulado. Dívida e patrimônio líquido são linhas soltas. */
-  o.plugins.tooltip.callbacks.label=c=>{let v=c.parsed.y;const D=c.chart.data.datasets;
-    if(c.datasetIndex===1)v=c.parsed.y-D[0].data[c.dataIndex];
-    return ' '+c.dataset.label+': '+BRL0.format(Math.abs(v));};
-  if(cComp&&cComp.data.datasets.length===ds.length){cComp.data.labels=lab;
-    cComp.data.datasets.forEach((d,i)=>{d.data=ds[i].data;});cComp.update('none');}
-  else cComp=mk(cComp,'chartComp',{type:'line',data:{labels:lab,datasets:ds},options:o});
-}
-
-function buildTable(p,r){
-  const s=modeOf(r,scen3),H=LAST.hz+1,d0=new Date(F.data.value||DEF.start);
-  const dstr=t=>{const d=new Date(d0.getFullYear(),d0.getMonth()+t,1);
-    return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();};
-  const sf=PV?' (hoje)':'';
-  const hd=freq==='m'
-    ?['Mês','Data','Ainda devo','Parcela paga','Aluguel pago','Seguro + manutenção','Amortização extra','Foi para investir','Total investido','Valor do imóvel','Patrimônio líquido']
-    :['Ano','Até','Ainda devo','Parcelas pagas','Aluguel pago','Seguro + manutenção','Amortização extra','Foi para investir','Total investido','Valor do imóvel','Patrimônio líquido'];
-  $('thead').innerHTML='<tr>'+hd.map((h,i)=>'<th>'+h+(i>1?sf:'')+'</th>').join('')+'</tr>';
-  const dfl=t=>PV?Math.pow(1+p.INF_m,t+1):1;
-  const extra=(x,t)=>x.exUse/dfl(t);
-  const cell=(v,cls)=>'<td'+(cls?' class="'+cls+'"':'')+'>'+(Math.abs(v)<0.5?'—':n0f(v))+'</td>';
-  let html='';
-  if(freq==='m'){
-    for(let t=0;t<H;t++){const x=s.rows[t],ex=extra(x,t);
-      html+='<tr class="'+(((x.exUse>0)?'evt ':'')+((s.quit===t)?'quit':'')).trim()+'"><td>'+(t+1)+
-        '</td><td>'+dstr(t)+'</td>'+cell(gv(x,'saldo'),x.saldo>0.5?'deb':'')+
-        cell(gv(x,'par'))+cell(gv(x,'aluguel'))+cell(gv(x,'custoProp'))+cell(ex,ex>0.5?'pos':'')+
-        cell(gv(x,'invest'))+'<td>'+n0f(gv(x,'fund'))+'</td>'+
-        cell(gv(x,'imovel'))+'<td class="'+(gv(x,'plTotal')>=0?'pos':'deb')+'">'+n0f(gv(x,'plTotal'))+'</td></tr>';}
-  }else{
-    const Y=Math.ceil(H/12);
-    for(let y=0;y<Y;y++){const a=y*12,b=Math.min(H,a+12);
-      let par=0,alu=0,cp=0,exx=0,ap=0,ev=false,q=false;
-      for(let t=a;t<b;t++){const x=s.rows[t];par+=gv(x,'par');alu+=gv(x,'aluguel');cp+=gv(x,'custoProp');
-        exx+=extra(x,t);ap+=gv(x,'invest');if(x.exUse>0)ev=true;if(s.quit===t)q=true;}
-      const x=s.rows[b-1];
-      html+='<tr class="'+((ev?'evt ':'')+(q?'quit':'')).trim()+'"><td>'+(y+1)+'</td><td>'+dstr(b-1)+
-        '</td>'+cell(gv(x,'saldo'),x.saldo>0.5?'deb':'')+
-        cell(par)+cell(alu)+cell(cp)+cell(exx,exx>0.5?'pos':'')+cell(ap)+
-        '<td>'+n0f(gv(x,'fund'))+'</td>'+cell(gv(x,'imovel'))+
-        '<td class="'+(gv(x,'plTotal')>=0?'pos':'deb')+'">'+n0f(gv(x,'plTotal'))+'</td></tr>';}
-  }
-  $('tbody').innerHTML=html;
-}
-
-/* ================= wiring ================= */
-let raf=null;const go=()=>{if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(render);};
-F.selicNum=selN;
-Object.keys(F).forEach(k=>{const i=F[k];if(!i)return;
-  i.addEventListener('input',go);
-  i.addEventListener('blur',()=>{
-    if(MONEY_FIELDS.indexOf(k)>=0){const v=pnum(i.value);if(v>=0)i.value=NUM0.format(Math.round(v));}
-    if(PCT_FIELDS.indexOf(k)>=0||k==='ltv'){const v=pnum(i.value);
-      if(!isNaN(v))i.value=v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-    go();});});
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');$(b.dataset.pane).classList.add('on');
-  [cRent,cEnt,cCmp,cComp].forEach(c=>c&&c.resize());}));
-const segClick=(id,fn)=>$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  $(id).querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');fn(b);});
-segClick('segPV',b=>{PV=(b.dataset.v==='r');render();});
-segClick('segMetric',b=>{metric=b.dataset.m;if(LAST){drawCmp(LAST.p,LAST.r,LAST.decT);setNote3();}});
-segClick('segScen2',b=>{scen2=b.dataset.s;if(LAST)drawComp(LAST.p,LAST.r);});
-segClick('segScen3',b=>{scen3=b.dataset.s;if(LAST)buildTable(LAST.p,LAST.r);});
-segClick('segFreq',b=>{freq=b.dataset.f;if(LAST)buildTable(LAST.p,LAST.r);});
-$('resetBtn').addEventListener('click',()=>{
-  Object.assign(V,DEF);
-  F.imovel.value='1.200.000';F.entrada.value='240.000';F.prazo.value='420';F.aluguel.value='5.000';
-  F.w0.value='600.000';F.extra.value='60.000';
-  F.cet.value='12,20';F.trA.value='0,00';F.selicTerm.value='10,50';
-  F.pctAq.value='4,00';F.custoProp.value='0,60';F.valoriz.value='0,00';F.ltv.value='80,00';
-  F.infl.value='4,50';F.convAnos.value='3';F.horiz.value='35';F.custoAqR.value='—';F.entMax.value='—';
-  selN.value='14,00';
-  F.data.value=DEF.start;render();});
+});
 render();
 })();
 </script>
-</body>
-</html>
+</body></html>
